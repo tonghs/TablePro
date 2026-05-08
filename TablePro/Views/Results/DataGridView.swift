@@ -64,6 +64,7 @@ struct DataGridView: NSViewRepresentable {
         tableView.gridStyleMask = [.solidVerticalGridLineMask]
         tableView.intercellSpacing = NSSize(width: 1, height: 0)
         tableView.rowHeight = CGFloat(settings.rowHeight.rawValue)
+        tableView.usesAutomaticRowHeights = false
 
         tableView.delegate = context.coordinator
         tableView.dataSource = context.coordinator
@@ -211,7 +212,7 @@ struct DataGridView: NSViewRepresentable {
         coordinator.primaryKeyColumns = configuration.primaryKeyColumns
         coordinator.tabType = configuration.tabType
 
-        coordinator.rebuildVisualStateCache()
+        coordinator.visualIndex.rebuild(from: coordinator.changeManager, sortedIDs: coordinator.sortedIDs)
 
         if !latestRows.columns.isEmpty {
             coordinator.isRebuildingColumns = true
