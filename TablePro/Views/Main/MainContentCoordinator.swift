@@ -99,6 +99,9 @@ final class MainContentCoordinator {
         RowOperationsManager(changeManager: changeManager)
     }()
 
+    @ObservationIgnored private(set) var filterCoordinator: FilterCoordinator!
+    @ObservationIgnored private(set) var queryExecutionCoordinator: QueryExecutionCoordinator!
+
     /// Stable identifier for this coordinator's window (set by MainContentView on appear)
     var windowId: UUID?
 
@@ -391,6 +394,9 @@ final class MainContentCoordinator {
             .sink { [weak self] _ in
                 self?.checkOpenTabsForExternalModification()
             }
+
+        self.filterCoordinator = FilterCoordinator(parent: self)
+        self.queryExecutionCoordinator = QueryExecutionCoordinator(parent: self)
 
         Self.lifecycleLogger.info(
             "[open] MainContentCoordinator.init done connId=\(connection.id, privacy: .public) elapsedMs=\(Int(Date().timeIntervalSince(initStart) * 1_000))"
