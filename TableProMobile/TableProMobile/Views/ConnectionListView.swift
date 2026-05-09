@@ -13,6 +13,7 @@ struct ConnectionListView: View {
     @State private var showingTagManagement = false
     @AppStorage("lastFilterTagId") private var filterTagIdString: String?
     @AppStorage("groupByGroup") private var groupByGroup = false
+    @AppStorage(AppPreferences.cloudSyncEnabledKey) private var cloudSyncEnabled = true
     @State private var editMode: EditMode = .inactive
     @State private var connectionToDelete: DatabaseConnection?
     @State private var showingSettings = false
@@ -94,10 +95,12 @@ struct ConnectionListView: View {
                                 ProgressView()
                                     .controlSize(.small)
                             } else {
-                                Image(systemName: "arrow.triangle.2.circlepath.icloud")
+                                Image(systemName: cloudSyncEnabled
+                                    ? "arrow.triangle.2.circlepath.icloud"
+                                    : "icloud.slash")
                             }
                         }
-                        .disabled(isSyncing)
+                        .disabled(isSyncing || !cloudSyncEnabled)
                         .accessibilityLabel(Text("Sync with iCloud"))
 
                         Button {
@@ -221,6 +224,7 @@ struct ConnectionListView: View {
             }
             .environment(\.editMode, $editMode)
             .refreshable {
+                guard cloudSyncEnabled else { return }
                 await appState.syncCoordinator.sync(
                     localConnections: appState.connections,
                     localGroups: appState.groups,
