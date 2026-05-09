@@ -7,6 +7,7 @@
 //
 
 import AppKit
+import Combine
 
 @MainActor
 final class DataTabGridDelegate: DataGridViewDelegate {
@@ -65,7 +66,7 @@ final class DataTabGridDelegate: DataGridViewDelegate {
     }
 
     func dataGridExportResults() {
-        NotificationCenter.default.post(name: .exportQueryResults, object: nil)
+        AppCommands.shared.exportQueryResults.send(())
     }
 
     func dataGridUndo() {}
