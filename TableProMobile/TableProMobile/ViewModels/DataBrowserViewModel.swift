@@ -270,7 +270,10 @@ final class DataBrowserViewModel {
         pagination.currentPage = 0
         pagination.totalRows = nil
         searchTask?.cancel()
-        let task = Task { [weak self] in await self?.load() }
+        let task = Task { [weak self] in
+            guard let self else { return }
+            await self.load()
+        }
         searchTask = task
         await task.value
     }
@@ -280,7 +283,10 @@ final class DataBrowserViewModel {
         pagination.currentPage = 0
         pagination.totalRows = nil
         searchTask?.cancel()
-        let task = Task { [weak self] in await self?.load() }
+        let task = Task { [weak self] in
+            guard let self else { return }
+            await self.load()
+        }
         searchTask = task
         await task.value
     }
