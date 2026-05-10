@@ -5,6 +5,7 @@
 
 import AppKit
 import SwiftUI
+import TableProPluginKit
 
 // MARK: - Popover Editors
 
@@ -12,6 +13,13 @@ extension TableViewCoordinator {
     func cellValue(at row: Int, column columnIndex: Int) -> String? {
         guard let displayRow = displayRow(at: row), columnIndex >= 0, columnIndex < displayRow.values.count else {
             return nil
+        }
+        return displayRow.values[columnIndex].asText
+    }
+
+    func cellTypedValue(at row: Int, column columnIndex: Int) -> PluginCellValue {
+        guard let displayRow = displayRow(at: row), columnIndex >= 0, columnIndex < displayRow.values.count else {
+            return .null
         }
         return displayRow.values[columnIndex]
     }
@@ -138,7 +146,13 @@ extension TableViewCoordinator {
     }
 
     func showBlobEditorPopover(tableView: NSTableView, row: Int, column: Int, columnIndex: Int) {
-        let currentValue = cellValue(at: row, column: columnIndex)
+        let typed = cellTypedValue(at: row, column: columnIndex)
+        let currentValue: String?
+        switch typed {
+        case .null: currentValue = nil
+        case .text(let s): currentValue = s
+        case .bytes(let data): currentValue = String(data: data, encoding: .isoLatin1)
+        }
 
         guard tableView.view(atColumn: column, row: row, makeIfNecessary: false) != nil else { return }
 
@@ -152,6 +166,9 @@ extension TableViewCoordinator {
                 initialValue: currentValue,
                 onCommit: { newValue in
                     self?.commitPopoverEdit(row: row, columnIndex: columnIndex, newValue: newValue)
+                },
+                onCommitBytes: { data in
+                    self?.commitBinaryEdit(row: row, columnIndex: columnIndex, data: data)
                 },
                 onDismiss: dismiss
             )
@@ -288,6 +305,10 @@ extension TableViewCoordinator {
 
     func commitPopoverEdit(row: Int, columnIndex: Int, newValue: String?) {
         commitCellEdit(row: row, columnIndex: columnIndex, newValue: newValue)
+    }
+
+    func commitBinaryEdit(row: Int, columnIndex: Int, data: Data) {
+        commitTypedCellEdit(row: row, columnIndex: columnIndex, newValue: .bytes(data))
     }
 }
 

@@ -57,7 +57,7 @@ extension QueryExecutionCoordinator {
         tabId: UUID,
         columns: [String],
         columnTypes: [ColumnType],
-        rows: [[String?]],
+        rows: [[PluginCellValue]],
         executionTime: TimeInterval,
         rowsAffected: Int,
         statusMessage: String?,
@@ -233,7 +233,7 @@ extension QueryExecutionCoordinator {
                         query: "SELECT COUNT(*) FROM \(quotedTable)"
                     )
                     if let firstRow = countResult.rows.first,
-                       let countStr = firstRow.first.flatMap({ $0 }) {
+                       let countStr = firstRow.first?.asText {
                         count = Int(countStr)
                     } else {
                         count = nil
@@ -343,7 +343,7 @@ extension QueryExecutionCoordinator {
                         query: "SELECT COUNT(*) FROM \(quotedTable)"
                     )
                     if let firstRow = countResult.rows.first,
-                       let countStr = firstRow.first.flatMap({ $0 }) {
+                       let countStr = firstRow.first?.asText {
                         count = Int(countStr)
                     } else {
                         count = nil

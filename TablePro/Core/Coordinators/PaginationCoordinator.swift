@@ -6,6 +6,7 @@
 import AppKit
 import Foundation
 import os
+import TableProPluginKit
 
 private let progressLog = Logger(subsystem: "com.TablePro", category: "ProgressiveLoad")
 

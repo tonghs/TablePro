@@ -6,6 +6,7 @@
 import AppKit
 import Foundation
 import os
+import TableProPluginKit
 
 private let multiStatementLogger = Logger(subsystem: "com.TablePro", category: "MultiStatement")
 
@@ -87,7 +88,7 @@ extension QueryExecutionCoordinator {
 
                     let stmtTableName = await MainActor.run { parent.extractTableName(from: sql) }
                     let stmtRows = TableRows.from(
-                        queryRows: result.rows.map { row in row.map { $0.map { String($0) } } },
+                        queryRows: result.rows,
                         columns: result.columns.map { String($0) },
                         columnTypes: result.columnTypes
                     )
@@ -217,9 +218,7 @@ extension QueryExecutionCoordinator {
         if let selectResult = lastSelectResult {
             let safeColumns = selectResult.columns.map { String($0) }
             let safeColumnTypes = selectResult.columnTypes
-            let safeRows = selectResult.rows.map { row in
-                row.map { $0.map { String($0) } }
-            }
+            let safeRows = selectResult.rows
             if currentTab.tabType == .table, let existing = currentTab.tableContext.tableName {
                 resolvedTableName = existing
             } else {
