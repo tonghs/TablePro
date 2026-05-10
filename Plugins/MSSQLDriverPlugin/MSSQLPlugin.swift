@@ -540,10 +540,10 @@ private final class FreeTDSConnection: @unchecked Sendable {
             let converted = buf.withUnsafeMutableBufferPointer { bufPtr in
                 dbconvert(proc, srcType, ptr, srcLen, Int32(SYBCHAR), bufPtr.baseAddress, bufSize)
             }
-            if converted > 0 {
-                return String(bytes: buf.prefix(Int(converted)), encoding: .utf8)
-            }
-            return nil
+            guard converted > 0,
+                  let raw = String(bytes: buf.prefix(Int(converted)), encoding: .utf8)
+            else { return nil }
+            return MSSQLDatetimeFormatter.reformat(raw, srcType: srcType) ?? raw
         }
     }
 
@@ -572,6 +572,128 @@ private final class FreeTDSConnection: @unchecked Sendable {
     }
 }
 
+// MARK: - Datetime Reformatting
+
+/// Reformats FreeTDS msdblib datetime output into ISO 8601 so values round-trip
+/// through SQL Server's implicit string-to-datetime conversion.
+///
+/// FreeTDS dbconvert(... SYBCHAR) emits legacy datetime values as
+/// "MMM d yyyy h:mm[:ss[:fffffff]]AM/PM" (msdblib mode). SQL Server's parser
+/// rejects that format on subsequent UPDATE/WHERE binding. ISO 8601
+/// (yyyy-MM-dd HH:mm:ss[.fffffff]) parses everywhere and preserves the original
+/// fractional digits exactly without Foundation.Date precision loss.
+internal enum MSSQLDatetimeFormatter {
+    /// Reformats a FreeTDS-emitted column value when the source type is one of
+    /// SQL Server's datetime variants. Returns nil for non-datetime types so the
+    /// caller falls back to the raw FreeTDS string.
+    static func reformat(_ raw: String, srcType: Int32) -> String? {
+        switch srcType {
+        case Int32(SYBDATETIME), Int32(SYBDATETIME4), Int32(SYBDATETIMN):
+            break
+        case 40, 41, 42:
+            // SYBMSDATE (40), SYBMSTIME (41), SYBMSDATETIME2 (42) from TDS 7.3+.
+            // Constants are not declared in the CFreeTDS stub header; matched
+            // by raw value. SYBMSDATETIMEOFFSET (43) is intentionally excluded
+            // because the offset suffix format is not verified.
+            break
+        default:
+            return nil
+        }
+        return parse(raw)
+    }
+
+    /// Returns ISO 8601 if the input is recognized, nil otherwise. Already-ISO
+    /// inputs pass through verbatim. Public so tests can exercise it directly.
+    static func parse(_ raw: String) -> String? {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        if isAlreadyISO(trimmed) {
+            return trimmed
+        }
+        return parseLegacyAMPM(trimmed)
+    }
+
+    /// FreeTDS emits "yyyy-MM-dd ..." for some TDS 7.3+ types. Detect the prefix
+    /// and pass through, since the rest of the value is already SQL Server parseable.
+    static func isAlreadyISO(_ s: String) -> Bool {
+        let chars = Array(s)
+        guard chars.count >= 10 else { return false }
+        return chars[0].isASCIIDigit && chars[1].isASCIIDigit
+            && chars[2].isASCIIDigit && chars[3].isASCIIDigit
+            && chars[4] == "-"
+            && chars[5].isASCIIDigit && chars[6].isASCIIDigit
+            && chars[7] == "-"
+            && chars[8].isASCIIDigit && chars[9].isASCIIDigit
+    }
+
+    /// Parses "MMM d yyyy h:mm[:ss[:fff[fffff]]] AM|PM" (msdblib 12-hour) or the
+    /// 24-hour variant without an AM/PM marker. Returns ISO 8601 with fractional
+    /// digits preserved verbatim.
+    private static func parseLegacyAMPM(_ raw: String) -> String? {
+        let scanner = Scanner(string: raw)
+        scanner.charactersToBeSkipped = nil
+        _ = scanner.scanCharacters(from: .whitespaces)
+
+        guard let monthToken = scanner.scanCharacters(from: .letters),
+              monthToken.count >= 3,
+              let month = monthNamesByPrefix[String(monthToken.prefix(3))]
+        else { return nil }
+
+        _ = scanner.scanCharacters(from: .whitespaces)
+        guard let day = scanner.scanInt(), (1...31).contains(day) else { return nil }
+        _ = scanner.scanCharacters(from: .whitespaces)
+        guard let year = scanner.scanInt(), (1...9999).contains(year) else { return nil }
+        _ = scanner.scanCharacters(from: .whitespaces)
+        guard var hour = scanner.scanInt() else { return nil }
+
+        var minute = 0
+        var second = 0
+        var fractional = ""
+
+        if scanner.scanString(":") != nil {
+            guard let m = scanner.scanInt(), (0...59).contains(m) else { return nil }
+            minute = m
+        }
+        if scanner.scanString(":") != nil {
+            guard let s = scanner.scanInt(), (0...59).contains(s) else { return nil }
+            second = s
+        }
+        if scanner.scanString(":") != nil || scanner.scanString(".") != nil {
+            fractional = scanner.scanCharacters(from: .decimalDigits) ?? ""
+        }
+
+        _ = scanner.scanCharacters(from: .whitespaces)
+        let ampm = scanner.scanCharacters(from: .letters)?.uppercased()
+
+        if let ampm {
+            guard ampm == "AM" || ampm == "PM" else { return nil }
+            guard (1...12).contains(hour) else { return nil }
+            if ampm == "PM", hour < 12 {
+                hour += 12
+            } else if ampm == "AM", hour == 12 {
+                hour = 0
+            }
+        } else {
+            guard (0...23).contains(hour) else { return nil }
+        }
+
+        var iso = String(format: "%04d-%02d-%02d %02d:%02d:%02d", year, month, day, hour, minute, second)
+        if !fractional.isEmpty {
+            iso += "." + fractional
+        }
+        return iso
+    }
+
+    private static let monthNamesByPrefix: [String: Int] = [
+        "Jan": 1, "Feb": 2, "Mar": 3, "Apr": 4, "May": 5, "Jun": 6,
+        "Jul": 7, "Aug": 8, "Sep": 9, "Oct": 10, "Nov": 11, "Dec": 12
+    ]
+}
+
+private extension Character {
+    var isASCIIDigit: Bool { isASCII && isNumber }
+}
+
 // MARK: - MSSQL Plugin Driver
 
 final class MSSQLPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
@@ -579,6 +701,13 @@ final class MSSQLPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
     private var freeTDSConn: FreeTDSConnection?
     private var _currentSchema: String
     private var _serverVersion: String?
+
+    /// IDENTITY columns observed during `fetchColumns`, keyed by table name.
+    /// `generateMssqlInsert` reads this to skip IDENTITY columns: SQL Server
+    /// rejects explicit values for IDENTITY columns unless IDENTITY_INSERT is ON,
+    /// and the value the user typed is server-allocated anyway.
+    private var identityColumnsByTable: [String: Set<String>] = [:]
+    private let identityCacheLock = NSLock()
 
     private static let logger = Logger(subsystem: "com.TablePro", category: "MSSQLPluginDriver")
 
@@ -641,6 +770,20 @@ final class MSSQLPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
         )
         try await conn.connect()
         self.freeTDSConn = conn
+
+        if let result = try? await conn.executeQuery("SELECT SCHEMA_NAME()"),
+           let serverSchema = result.rows.first?.first ?? nil,
+           !serverSchema.isEmpty {
+            _currentSchema = serverSchema
+        } else {
+            Self.logger.warning("SELECT SCHEMA_NAME() returned no value; keeping \(self._currentSchema, privacy: .public)")
+        }
+
+        let formSchema = config.additionalFields["mssqlSchema"]
+        if let formSchema, !formSchema.isEmpty, formSchema != _currentSchema {
+            _currentSchema = formSchema
+        }
+
         if let result = try? await conn.executeQuery("SELECT @@VERSION"),
            let versionStr = result.rows.first?.first ?? nil {
             _serverVersion = String(versionStr.prefix(50))
@@ -685,6 +828,7 @@ final class MSSQLPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
     func generateStatements(
         table: String,
         columns: [String],
+        primaryKeyColumns: [String],
         changes: [PluginRowChange],
         insertedRowData: [Int: [String?]],
         deletedRowIndices: Set<Int>,
@@ -704,7 +848,10 @@ final class MSSQLPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
                     }
                 }
             case .update:
-                if let stmt = generateMssqlUpdate(table: table, columns: columns, change: change) {
+                if let stmt = generateMssqlUpdate(
+                    table: table, columns: columns,
+                    primaryKeyColumns: primaryKeyColumns, change: change
+                ) {
                     statements.append(stmt)
                 }
             case .delete:
@@ -715,7 +862,10 @@ final class MSSQLPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
 
         if !deleteChanges.isEmpty {
             for change in deleteChanges {
-                if let stmt = generateMssqlDelete(table: table, columns: columns, change: change) {
+                if let stmt = generateMssqlDelete(
+                    table: table, columns: columns,
+                    primaryKeyColumns: primaryKeyColumns, change: change
+                ) {
                     statements.append(stmt)
                 }
             }
@@ -731,11 +881,17 @@ final class MSSQLPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
     ) -> (statement: String, parameters: [String?])? {
         var nonDefaultColumns: [String] = []
         var parameters: [String?] = []
+        let identityColumns = cachedIdentityColumns(for: table)
 
         for (index, value) in values.enumerated() {
             if value == "__DEFAULT__" { continue }
             guard index < columns.count else { continue }
-            nonDefaultColumns.append("[\(columns[index].replacingOccurrences(of: "]", with: "]]"))]")
+            let columnName = columns[index]
+            // SQL Server IDENTITY columns are server-allocated. INSERTs that include
+            // an explicit value fail unless `SET IDENTITY_INSERT <table> ON` was issued,
+            // so always omit them and let the server assign the next value.
+            if identityColumns.contains(columnName) { continue }
+            nonDefaultColumns.append("[\(columnName.replacingOccurrences(of: "]", with: "]]"))]")
             parameters.append(value)
         }
 
@@ -751,9 +907,11 @@ final class MSSQLPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
     private func generateMssqlUpdate(
         table: String,
         columns: [String],
+        primaryKeyColumns: [String],
         change: PluginRowChange
     ) -> (statement: String, parameters: [String?])? {
         guard !change.cellChanges.isEmpty else { return nil }
+        guard let originalRow = change.originalRow else { return nil }
 
         let escapedTable = "[\(table.replacingOccurrences(of: "]", with: "]]"))]"
         var parameters: [String?] = []
@@ -764,15 +922,15 @@ final class MSSQLPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
             return "\(col) = ?"
         }.joined(separator: ", ")
 
-        // Check if we have original row data to identify by PK or all columns
-        guard let originalRow = change.originalRow else { return nil }
+        let whereColumns: [String] = primaryKeyColumns.isEmpty ? columns : primaryKeyColumns
 
-        // Use all columns as WHERE clause for safety
         var conditions: [String] = []
-        for (index, columnName) in columns.enumerated() {
-            guard index < originalRow.count else { continue }
-            let col = "[\(columnName.replacingOccurrences(of: "]", with: "]]"))]"
-            if let value = originalRow[index] {
+        for whereColumn in whereColumns {
+            guard let columnIndex = columns.firstIndex(of: whereColumn),
+                  columnIndex < originalRow.count
+            else { continue }
+            let col = "[\(whereColumn.replacingOccurrences(of: "]", with: "]]"))]"
+            if let value = originalRow[columnIndex] {
                 parameters.append(value)
                 conditions.append("\(col) = ?")
             } else {
@@ -783,15 +941,15 @@ final class MSSQLPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
         guard !conditions.isEmpty else { return nil }
 
         let whereClause = conditions.joined(separator: " AND ")
-
-        // Without a reliable PK, use UPDATE TOP (1) for safety
-        let sql = "UPDATE TOP (1) \(escapedTable) SET \(setClauses) WHERE \(whereClause)"
+        let topClause = primaryKeyColumns.isEmpty ? "TOP (1) " : ""
+        let sql = "UPDATE \(topClause)\(escapedTable) SET \(setClauses) WHERE \(whereClause)"
         return (statement: sql, parameters: parameters)
     }
 
     private func generateMssqlDelete(
         table: String,
         columns: [String],
+        primaryKeyColumns: [String],
         change: PluginRowChange
     ) -> (statement: String, parameters: [String?])? {
         guard let originalRow = change.originalRow else { return nil }
@@ -800,10 +958,14 @@ final class MSSQLPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
         var parameters: [String?] = []
         var conditions: [String] = []
 
-        for (index, columnName) in columns.enumerated() {
-            guard index < originalRow.count else { continue }
-            let col = "[\(columnName.replacingOccurrences(of: "]", with: "]]"))]"
-            if let value = originalRow[index] {
+        let whereColumns: [String] = primaryKeyColumns.isEmpty ? columns : primaryKeyColumns
+
+        for whereColumn in whereColumns {
+            guard let columnIndex = columns.firstIndex(of: whereColumn),
+                  columnIndex < originalRow.count
+            else { continue }
+            let col = "[\(whereColumn.replacingOccurrences(of: "]", with: "]]"))]"
+            if let value = originalRow[columnIndex] {
                 parameters.append(value)
                 conditions.append("\(col) = ?")
             } else {
@@ -814,7 +976,8 @@ final class MSSQLPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
         guard !conditions.isEmpty else { return nil }
 
         let whereClause = conditions.joined(separator: " AND ")
-        let sql = "DELETE TOP (1) FROM \(escapedTable) WHERE \(whereClause)"
+        let topClause = primaryKeyColumns.isEmpty ? "TOP (1) " : ""
+        let sql = "DELETE \(topClause)FROM \(escapedTable) WHERE \(whereClause)"
         return (statement: sql, parameters: parameters)
     }
 
@@ -932,7 +1095,8 @@ final class MSSQLPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
             ORDER BY c.ORDINAL_POSITION
             """
         let result = try await execute(query: sql)
-        return result.rows.compactMap { row -> PluginColumnInfo? in
+        var identityColumns: Set<String> = []
+        let columns: [PluginColumnInfo] = result.rows.compactMap { row -> PluginColumnInfo? in
             guard let name = row[safe: 0] ?? nil else { return nil }
             let dataType = row[safe: 1] ?? nil
             let charLen = row[safe: 2] ?? nil
@@ -942,6 +1106,10 @@ final class MSSQLPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
             let defaultValue = row[safe: 6] ?? nil
             let isIdentity = (row[safe: 7] ?? nil) == "1"
             let isPk = (row[safe: 8] ?? nil) == "1"
+
+            if isIdentity {
+                identityColumns.insert(name)
+            }
 
             let baseType = (dataType ?? "nvarchar").lowercased()
             let fixedSizeTypes: Set<String> = [
@@ -972,6 +1140,27 @@ final class MSSQLPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
                 extra: isIdentity ? "IDENTITY" : nil
             )
         }
+        identityCacheLock.lock()
+        identityColumnsByTable[table] = identityColumns
+        identityCacheLock.unlock()
+        return columns
+    }
+
+    /// Snapshot of IDENTITY columns observed by the most recent `fetchColumns` for the table.
+    /// Returns an empty set when `fetchColumns` hasn't run for this table yet, so callers
+    /// fall through to including every typed value (matching pre-cache behavior).
+    internal func cachedIdentityColumns(for table: String) -> Set<String> {
+        identityCacheLock.lock()
+        defer { identityCacheLock.unlock() }
+        return identityColumnsByTable[table] ?? []
+    }
+
+    /// Test seam: pre-populate the cache so generateMssqlInsert can be exercised
+    /// without going through a live `fetchColumns` round-trip.
+    internal func setIdentityColumnsForTesting(_ columns: Set<String>, table: String) {
+        identityCacheLock.lock()
+        identityColumnsByTable[table] = columns
+        identityCacheLock.unlock()
     }
 
     func fetchIndexes(table: String, schema: String?) async throws -> [PluginIndexInfo] {

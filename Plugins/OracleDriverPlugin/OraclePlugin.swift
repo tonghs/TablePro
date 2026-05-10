@@ -673,6 +673,7 @@ final class OraclePluginDriver: PluginDatabaseDriver, @unchecked Sendable {
     func generateStatements(
         table: String,
         columns: [String],
+        primaryKeyColumns: [String],
         changes: [PluginRowChange],
         insertedRowData: [Int: [String?]],
         deletedRowIndices: Set<Int>,
@@ -973,6 +974,13 @@ final class OraclePluginDriver: PluginDatabaseDriver, @unchecked Sendable {
         let escaped = schema.replacingOccurrences(of: "\"", with: "\"\"")
         _ = try await execute(query: "ALTER SESSION SET CURRENT_SCHEMA = \"\(escaped)\"")
         _currentSchema = schema
+    }
+
+    /// Oracle has no real database concept; "switch database" is a schema switch.
+    /// Aliases to keep `coordinator.switchDatabase` working from tab restore paths
+    /// without relying on a manager-side kludge.
+    func switchDatabase(to database: String) async throws {
+        try await switchSchema(to: database)
     }
 
     // MARK: - All Tables Metadata
