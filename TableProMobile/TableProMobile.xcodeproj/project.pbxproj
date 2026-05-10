@@ -539,9 +539,9 @@
 		5AA136302F82660900ADCD58 /* Exceptions for "TableProWidget" folder in "TableProMobile" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				Shared/QueryActivityAttributes.swift,
 				Shared/SharedConnectionStore.swift,
 				Shared/WidgetConnectionItem.swift,
-				Shared/QueryActivityAttributes.swift,
 			);
 			target = 5AB9F3D82F7C1C12001F3337 /* TableProMobile */;
 		};
@@ -2132,7 +2132,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = D7HJ5TFYCU;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = vn.nqd.TableProMobileTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -2155,7 +2155,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = D7HJ5TFYCU;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = vn.nqd.TableProMobileTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
