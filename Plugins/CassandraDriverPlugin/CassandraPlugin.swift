@@ -337,9 +337,15 @@ private actor CassandraConnectionActor {
         defer { cass_statement_free(statement) }
 
         for (index, param) in parameters.enumerated() {
-            if let value = param {
+            switch param {
+            case .text(let value):
                 cass_statement_bind_string(statement, index, value)
-            } else {
+            case .bytes(let data):
+                data.withUnsafeBytes { buffer in
+                    let base = buffer.bindMemory(to: cass_byte_t.self).baseAddress
+                    cass_statement_bind_bytes(statement, index, base, data.count)
+                }
+            case .null:
                 cass_statement_bind_null(statement, index)
             }
         }
