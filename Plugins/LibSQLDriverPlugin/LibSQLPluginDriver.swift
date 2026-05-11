@@ -198,7 +198,9 @@ final class LibSQLPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
         )))
 
         if !result.rows.isEmpty {
-            let rows = result.rows.map { rawRow in rawRow.map(\.stringValue) }
+            let rows = result.rows.map { rawRow in
+                rawRow.map(\.stringValue).map(PluginCellValue.fromOptional)
+            }
             continuation.yield(.rows(rows))
         }
 

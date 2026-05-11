@@ -219,7 +219,9 @@ final class CloudflareD1PluginDriver: PluginDatabaseDriver, @unchecked Sendable 
 
         let rawRows = payload.results.rows ?? []
         if !rawRows.isEmpty {
-            let rows = rawRows.map { rawRow in rawRow.map(\.stringValue) }
+            let rows = rawRows.map { rawRow in
+                rawRow.map(\.stringValue).map(PluginCellValue.fromOptional)
+            }
             continuation.yield(.rows(rows))
         }
 

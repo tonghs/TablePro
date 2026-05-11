@@ -341,9 +341,12 @@ private actor CassandraConnectionActor {
             case .text(let value):
                 cass_statement_bind_string(statement, index, value)
             case .bytes(let data):
-                data.withUnsafeBytes { buffer in
-                    let base = buffer.bindMemory(to: cass_byte_t.self).baseAddress
-                    cass_statement_bind_bytes(statement, index, base, data.count)
+                data.withUnsafeBytes { rawBuffer in
+                    if let base = rawBuffer.baseAddress?.assumingMemoryBound(to: UInt8.self) {
+                        cass_statement_bind_bytes(statement, index, base, data.count)
+                    } else {
+                        cass_statement_bind_null(statement, index)
+                    }
                 }
             case .null:
                 cass_statement_bind_null(statement, index)
@@ -390,7 +393,7 @@ private actor CassandraConnectionActor {
 
     func serverVersion() throws -> String? {
         let result = try executeQuery("SELECT release_version FROM system.local WHERE key = 'local'")
-        return result.rows.first?.first ?? nil
+        return result.rows.first?.first?.asText
     }
 
     // MARK: - Private Helpers
