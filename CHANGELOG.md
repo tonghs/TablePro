@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Redis: Sentinel connection mode. Pick "Sentinel" in the connection form, list the Sentinel nodes, and set the master name; TablePro resolves the current master through the Sentinel quorum and re-resolves automatically on failover (#1021)
+
 ### Changed
 
 - Quick Switcher rewritten as a native SwiftUI sheet matching the Database Switcher style. Adds a Recent section per connection.
