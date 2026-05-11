@@ -23,7 +23,7 @@ struct HostListFieldRow: View {
         LabeledContent {
             List(selection: $selectedId) {
                 ForEach(entries) { entry in
-                    TextField("", text: bindingForEntry(entry), prompt: Text("hostname:\(defaultPort)"))
+                    TextField("", text: bindingForEntry(entry), prompt: Text(verbatim: "hostname:\(defaultPort)"))
                         .tag(entry.id)
                 }
             }
