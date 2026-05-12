@@ -9,17 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Quick Switcher rewritten as a native SwiftUI sheet matching the Database Switcher style. Adds a Recent section per connection.
-- Double-click handling in sidebar, database switcher, and connection type chooser now uses `contextMenu(forSelectionType:primaryAction:)` instead of a custom NSEvent monitor.
-- Welcome screen drops the "Import Connections..." button; both import flows remain in the `+` menu.
-- Connection Switcher and SQL Preview present as sheets instead of toolbar-anchored popovers, so they work from the toolbar, the overflow menu, and keyboard shortcuts identically.
-- Toolbar composites (Connection/Database, Refresh/Save, Export/Import) are now `NSToolbarItemGroup`s, so each button appears as its own entry in the overflow menu.
+- Quick Switcher matches the Open Database dialog and shows a Recent section per connection.
+- Connection Switcher and SQL Preview open as sheets so they work from the toolbar, overflow menu, and keyboard shortcuts.
+- Filters button moved out of the toolbar; the bottom-bar Filters control remains.
+- Welcome screen drops the Import Connections button; both import flows remain in the + menu.
 
 ### Fixed
 
-- Toolbar overflow menu entries fired no action when the window was narrowed. Each `NSToolbarItem` now sets `target`/`action`/`menuFormRepresentation` per Apple's AppKit contract for view-based items, with `validateToolbarItem` driving enabled state.
-- Quick Switcher crash on macOS 26 caused by an NSPanel + NSHostingController constraint loop.
-- Registry updates for built-in drivers (ClickHouse, Redis) now stick after restart. Plugin builds previously kept the default `1.0` version, tying with the bundled copy so the user-installed update was pruned on load.
+- Toolbar overflow menu entries now fire their action when the window is narrowed.
+- SQL Preview no longer freezes when previewing a very large batch.
+- Quick Switcher crash on macOS 26.
+- Registry updates for bundled drivers (ClickHouse, Redis) now persist after restart.
 
 ## [0.40.0] - 2026-05-12
 
