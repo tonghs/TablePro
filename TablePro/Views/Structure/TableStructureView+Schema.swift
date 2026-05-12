@@ -35,7 +35,7 @@ extension TableStructureView {
 
         guard let pluginDriver = (DatabaseManager.shared.driver(for: connection.id) as? PluginDriverAdapter)?.schemaPluginDriver else {
             toolbarState.previewStatements = ["-- Error: no plugin driver available for DDL generation"]
-            coordinator?.activeSheet = .sqlPreview
+            toolbarState.showSQLReviewPopover = true
             return
         }
 
@@ -50,7 +50,7 @@ extension TableStructureView {
         } catch {
             toolbarState.previewStatements = ["-- Error generating SQL: \(error.localizedDescription)"]
         }
-        coordinator?.activeSheet = .sqlPreview
+        toolbarState.showSQLReviewPopover = true
     }
 
     func executeSchemaChanges() async {

@@ -44,8 +44,6 @@ struct DisplayFormatsCacheEntry {
 enum ActiveSheet: Identifiable {
     case databaseSwitcher
     case quickSwitcher
-    case connectionSwitcher
-    case sqlPreview
     case exportDialog
     case importDialog
     case exportQueryResults
@@ -55,8 +53,6 @@ enum ActiveSheet: Identifiable {
         switch self {
         case .databaseSwitcher: "databaseSwitcher"
         case .quickSwitcher: "quickSwitcher"
-        case .connectionSwitcher: "connectionSwitcher"
-        case .sqlPreview: "sqlPreview"
         case .exportDialog: "exportDialog"
         case .importDialog: "importDialog"
         case .exportQueryResults: "exportQueryResults"
