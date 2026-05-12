@@ -41,8 +41,10 @@ build_plugin() {
         -derivedDataPath "$DERIVED_DATA_DIR" \
         build > "build-plugin-${arch}.log" 2>&1; then
         echo "FATAL: xcodebuild failed for $PLUGIN_TARGET ($arch)" >&2
-        echo "Last 30 lines of build log:" >&2
-        tail -30 "build-plugin-${arch}.log" >&2
+        echo "=== Swift errors (grep error:) ===" >&2
+        grep -nE "error:|cannot|undefined symbol" "build-plugin-${arch}.log" | head -40 >&2 || true
+        echo "=== Last 80 lines of build log ===" >&2
+        tail -80 "build-plugin-${arch}.log" >&2
         exit 1
     fi
 
