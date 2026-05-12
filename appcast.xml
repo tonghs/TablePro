@@ -3,6 +3,73 @@
     <channel>
         <title>TablePro</title>
         <item>
+            <title>0.40.2</title>
+            <pubDate>Tue, 12 May 2026 13:39:58 +0000</pubDate>
+            <sparkle:version>82</sparkle:version>
+            <sparkle:shortVersionString>0.40.2</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description><![CDATA[<h3>Added</h3>
+<ul>
+<li>Right-click Set Value on date, datetime, and timestamp cells now offers `CURRENT_DATE`, `CURRENT_TIME`, `NOW()`, and `CURRENT_TIMESTAMP`, filtered by column type.</li>
+<li>Welcome screen left pane gains an Import from Other App button.</li>
+</ul>
+<h3>Changed</h3>
+<ul>
+<li>Row numbers in the data grid continue across pages and the `#` column auto-sizes to fit the widest visible number.</li>
+<li>Date, datetime, and timestamp cells use the standard inline text editor; the popover date picker is removed.</li>
+<li>Foreign key preview popover follows the selected row as you arrow up or down.</li>
+<li>The connection window shows the connecting state inline with a Cancel button.</li>
+</ul>
+<h3>Fixed</h3>
+<ul>
+<li>Closing the connection window during a slow connect no longer leaves a stuck "Connecting…" window or a stray failure alert (#1185).</li>
+<li>Cmd+Z while editing a cell now undoes typing in the editor; pressing it after dismissing the editor no longer crashes.</li>
+<li>Cmd+Z right after Add Row no longer leaves a stranded editor floating over the removed row.</li>
+<li>Editing a NULL cell and dismissing without typing no longer flips the value to an empty string.</li>
+<li>Double-clicking another cell while editing no longer delays the new editor or drops pending changes on the previous one.</li>
+<li>Double-clicking an enum, set, or boolean cell now opens the inline text editor; the chevron still opens the picker popover.</li>
+<li>Chevron-accessory cells (enum, boolean, JSON, blob) no longer truncate short values that fit the full cell width.</li>
+<li>DATE columns no longer render a phantom `00:00:00` time suffix.</li>
+<li>Adding a new row no longer renders the row on top of the auto-opened cell editor mid-animation.</li>
+</ul>
+]]></description>
+            <enclosure url="https://github.com/TableProApp/TablePro/releases/download/v0.40.2/TablePro-0.40.2-arm64.zip" length="20859947" type="application/octet-stream" sparkle:edSignature="WdCliaccGeJi4vP6dKQ94f98IOk4nxifqD32eLo3E//uOsBQKPFfOg2xFHmmbfQfwCGYE5jXpIvO/k5rtRlVDQ=="/>
+        </item>
+        <item>
+            <title>0.40.2</title>
+            <pubDate>Tue, 12 May 2026 13:39:59 +0000</pubDate>
+            <sparkle:version>82</sparkle:version>
+            <sparkle:shortVersionString>0.40.2</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[<h3>Added</h3>
+<ul>
+<li>Right-click Set Value on date, datetime, and timestamp cells now offers `CURRENT_DATE`, `CURRENT_TIME`, `NOW()`, and `CURRENT_TIMESTAMP`, filtered by column type.</li>
+<li>Welcome screen left pane gains an Import from Other App button.</li>
+</ul>
+<h3>Changed</h3>
+<ul>
+<li>Row numbers in the data grid continue across pages and the `#` column auto-sizes to fit the widest visible number.</li>
+<li>Date, datetime, and timestamp cells use the standard inline text editor; the popover date picker is removed.</li>
+<li>Foreign key preview popover follows the selected row as you arrow up or down.</li>
+<li>The connection window shows the connecting state inline with a Cancel button.</li>
+</ul>
+<h3>Fixed</h3>
+<ul>
+<li>Closing the connection window during a slow connect no longer leaves a stuck "Connecting…" window or a stray failure alert (#1185).</li>
+<li>Cmd+Z while editing a cell now undoes typing in the editor; pressing it after dismissing the editor no longer crashes.</li>
+<li>Cmd+Z right after Add Row no longer leaves a stranded editor floating over the removed row.</li>
+<li>Editing a NULL cell and dismissing without typing no longer flips the value to an empty string.</li>
+<li>Double-clicking another cell while editing no longer delays the new editor or drops pending changes on the previous one.</li>
+<li>Double-clicking an enum, set, or boolean cell now opens the inline text editor; the chevron still opens the picker popover.</li>
+<li>Chevron-accessory cells (enum, boolean, JSON, blob) no longer truncate short values that fit the full cell width.</li>
+<li>DATE columns no longer render a phantom `00:00:00` time suffix.</li>
+<li>Adding a new row no longer renders the row on top of the auto-opened cell editor mid-animation.</li>
+</ul>
+]]></description>
+            <enclosure url="https://github.com/TableProApp/TablePro/releases/download/v0.40.2/TablePro-0.40.2-x86_64.zip" length="22104518" type="application/octet-stream" sparkle:edSignature="DsPPoCITf8i5HWoD/6ifeWjDnJXqCKbOg4H+rc6hUSXHJF4ZhX37oP+73VpVZrM6GFI+gagoIrewpbMbbMH+Ag=="/>
+        </item>
+        <item>
             <title>0.40.1</title>
             <pubDate>Tue, 12 May 2026 06:27:15 +0000</pubDate>
             <sparkle:version>81</sparkle:version>
