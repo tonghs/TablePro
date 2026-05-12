@@ -14453,9 +14453,6 @@
         }
       }
     },
-    "DATABASES" : {
-
-    },
     "Date format:" : {
       "localizations" : {
         "tr" : {
@@ -37122,6 +37119,9 @@
         }
       }
     },
+    "Recent" : {
+
+    },
     "RECENT" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -37167,7 +37167,7 @@
         }
       }
     },
-    "RECENT QUERIES" : {
+    "Recent Queries" : {
 
     },
     "Recent query history for a connection (supports ?limit=, ?search=, ?date_filter=)" : {
@@ -40305,9 +40305,6 @@
           }
         }
       }
-    },
-    "SCHEMAS" : {
-
     },
     "Scroll to latest message" : {
 
@@ -45768,7 +45765,7 @@
         }
       }
     },
-    "SYSTEM TABLES" : {
+    "System Tables" : {
 
     },
     "Tab Behavior" : {
@@ -46050,9 +46047,6 @@
           }
         }
       }
-    },
-    "TABLES" : {
-
     },
     "Tables with more estimated rows use approximate counts to avoid slow COUNT(*) queries" : {
       "localizations" : {
@@ -51264,9 +51258,6 @@
       }
     },
     "Views" : {
-
-    },
-    "VIEWS" : {
 
     },
     "Vim mode" : {
