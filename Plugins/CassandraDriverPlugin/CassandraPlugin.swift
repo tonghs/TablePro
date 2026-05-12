@@ -1204,8 +1204,8 @@ internal final class CassandraPluginDriver: PluginDatabaseDriver, @unchecked Sen
         let countQuery = "SELECT COUNT(*) FROM \"\(escapeIdentifier(ks))\".\"\(escapeIdentifier(table))\" LIMIT 100001"
         let countResult = try? await execute(query: countQuery)
         let rowCount: Int64? = {
-            guard let row = countResult?.rows.first, let countStr = row.first else { return nil }
-            return Int64(countStr ?? "0")
+            guard let row = countResult?.rows.first, let countStr = row.first?.asText else { return nil }
+            return Int64(countStr)
         }()
 
         return PluginTableMetadata(

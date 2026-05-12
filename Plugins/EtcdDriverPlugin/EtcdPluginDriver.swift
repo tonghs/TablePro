@@ -519,7 +519,7 @@ final class EtcdPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
             return PluginQueryResult(
                 columns: ["Result"],
                 columnTypeNames: ["String"],
-                rows: [["Compaction completed at revision \(revision)"]],
+                rows: [[.text("Compaction completed at revision \(revision)")]],
                 rowsAffected: 0,
                 executionTime: Date().timeIntervalSince(startTime)
             )
