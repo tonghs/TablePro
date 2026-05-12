@@ -7,30 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.40.2] - 2026-05-12
+
 ### Added
 
-- Right-click Set Value submenu on date, datetime, and timestamp cells now offers current-value SQL function presets (`CURRENT_DATE` for date columns, `CURRENT_TIME` for time columns, `NOW()` and `CURRENT_TIMESTAMP` for datetime and timestamp columns).
-- Welcome screen left pane gains an Import from Other App button next to Create Connection and Try Sample Database, opening the existing TablePlus / Sequel Ace / DBeaver import flow.
+- Right-click Set Value on date, datetime, and timestamp cells now offers `CURRENT_DATE`, `CURRENT_TIME`, `NOW()`, and `CURRENT_TIMESTAMP`, filtered by column type.
+- Welcome screen left pane gains an Import from Other App button.
 
 ### Changed
 
-- Row numbers in the data grid now continue across pages instead of resetting to 1, matching the pagination footer (page 2 with a page size of 1000 shows 1001-2000). The `#` column auto-sizes to fit the widest row number expected on the current page so values like `14001` no longer clip.
-- The connection window shows the connecting state inline with a Cancel button instead of an empty sidebar.
-- Date, datetime, and timestamp cells use the same inline text editor as other columns; the popover date picker is removed.
-- The foreign key preview popover now follows the selected row when you arrow up or down, refreshing both the anchor and the displayed reference row. Arrow left or right (column change) and row mutations dismiss the popover.
+- Row numbers in the data grid continue across pages and the `#` column auto-sizes to fit the widest visible number.
+- Date, datetime, and timestamp cells use the standard inline text editor; the popover date picker is removed.
+- Foreign key preview popover follows the selected row as you arrow up or down.
+- The connection window shows the connecting state inline with a Cancel button.
 
 ### Fixed
 
 - Closing the connection window during a slow connect no longer leaves a stuck "Connecting…" window or a stray failure alert (#1185).
-- Editing a NULL cell and dismissing without typing no longer flips the value to an empty string or marks the row as modified.
-- Data grid cells with a chevron accessory (enum, boolean, JSON, blob) no longer truncate short values that fit the full cell width.
+- Cmd+Z while editing a cell now undoes typing in the editor; pressing it after dismissing the editor no longer crashes.
+- Cmd+Z right after Add Row no longer leaves a stranded editor floating over the removed row.
+- Editing a NULL cell and dismissing without typing no longer flips the value to an empty string.
+- Double-clicking another cell while editing no longer delays the new editor or drops pending changes on the previous one.
 - Double-clicking an enum, set, or boolean cell now opens the inline text editor; the chevron still opens the picker popover.
-- Double-clicking another cell while editing no longer delays the new editor or silently drops pending changes on the previous cell.
-- DATE columns no longer render a phantom `00:00:00` time suffix; the display now matches the stored value and the editor.
-- Editing a cell, dismissing the editor, then pressing Cmd+Z multiple times no longer crashes. The inline editor now keeps its typing-undo stack private instead of pushing entries onto the window's undo manager.
-- Pressing Cmd+Z right after Add Row no longer leaves a stranded cell editor floating over the removed row; the editor now dismisses whenever rows are inserted, removed, or replaced.
-- Adding a new row no longer renders the new row view on top of the auto-opened cell editor mid-animation; the editor is kept at the front of the table view's subview list whenever a sibling is added.
-- Cmd+Z and Cmd+Shift+Z while editing a cell now undo and redo typing in the editor instead of jumping straight to data-grid changes; the menu commands route through the first responder before falling back to the window's undo manager.
+- Chevron-accessory cells (enum, boolean, JSON, blob) no longer truncate short values that fit the full cell width.
+- DATE columns no longer render a phantom `00:00:00` time suffix.
+- Adding a new row no longer renders the row on top of the auto-opened cell editor mid-animation.
 
 ## [0.40.1] - 2026-05-12
 
@@ -1781,7 +1782,8 @@ TablePro is a native macOS database client built with SwiftUI and AppKit, design
     - Custom SQL query templates
     - Performance optimized for large datasets
 
-[Unreleased]: https://github.com/TableProApp/TablePro/compare/v0.40.1...HEAD
+[Unreleased]: https://github.com/TableProApp/TablePro/compare/v0.40.2...HEAD
+[0.40.2]: https://github.com/TableProApp/TablePro/compare/v0.40.1...v0.40.2
 [0.40.1]: https://github.com/TableProApp/TablePro/compare/v0.40.0...v0.40.1
 [0.40.0]: https://github.com/TableProApp/TablePro/compare/v0.39.1...v0.40.0
 [0.39.1]: https://github.com/TableProApp/TablePro/compare/v0.39.0...v0.39.1
