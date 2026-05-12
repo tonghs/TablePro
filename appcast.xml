@@ -3,6 +3,53 @@
     <channel>
         <title>TablePro</title>
         <item>
+            <title>0.40.1</title>
+            <pubDate>Tue, 12 May 2026 06:27:15 +0000</pubDate>
+            <sparkle:version>81</sparkle:version>
+            <sparkle:shortVersionString>0.40.1</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description><![CDATA[<h3>Changed</h3>
+<ul>
+<li>Quick Switcher matches the Open Database dialog and shows a Recent section per connection.</li>
+<li>Connection Switcher and SQL Preview open as sheets so they work from the toolbar, overflow menu, and keyboard shortcuts.</li>
+<li>Filters button moved out of the toolbar; the bottom-bar Filters control remains.</li>
+<li>Welcome screen drops the Import Connections button; both import flows remain in the + menu.</li>
+</ul>
+<h3>Fixed</h3>
+<ul>
+<li>Toolbar overflow menu entries now fire their action when the window is narrowed.</li>
+<li>SQL Preview no longer freezes when previewing a very large batch.</li>
+<li>Quick Switcher crash on macOS 26.</li>
+<li>Registry updates for bundled drivers (ClickHouse, Redis) now persist after restart.</li>
+</ul>
+]]></description>
+            <enclosure url="https://github.com/TableProApp/TablePro/releases/download/v0.40.1/TablePro-0.40.1-arm64.zip" length="20849463" type="application/octet-stream" sparkle:edSignature="cGyMlou/Kad39luVXnLrIdLUiXXs+8tuKssEeXZGLxp04Bw6X1De2piaD3eE5h/8Pq96mqx6yR3L5XenJzIHBg=="/>
+        </item>
+        <item>
+            <title>0.40.1</title>
+            <pubDate>Tue, 12 May 2026 06:27:16 +0000</pubDate>
+            <sparkle:version>81</sparkle:version>
+            <sparkle:shortVersionString>0.40.1</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[<h3>Changed</h3>
+<ul>
+<li>Quick Switcher matches the Open Database dialog and shows a Recent section per connection.</li>
+<li>Connection Switcher and SQL Preview open as sheets so they work from the toolbar, overflow menu, and keyboard shortcuts.</li>
+<li>Filters button moved out of the toolbar; the bottom-bar Filters control remains.</li>
+<li>Welcome screen drops the Import Connections button; both import flows remain in the + menu.</li>
+</ul>
+<h3>Fixed</h3>
+<ul>
+<li>Toolbar overflow menu entries now fire their action when the window is narrowed.</li>
+<li>SQL Preview no longer freezes when previewing a very large batch.</li>
+<li>Quick Switcher crash on macOS 26.</li>
+<li>Registry updates for bundled drivers (ClickHouse, Redis) now persist after restart.</li>
+</ul>
+]]></description>
+            <enclosure url="https://github.com/TableProApp/TablePro/releases/download/v0.40.1/TablePro-0.40.1-x86_64.zip" length="22085709" type="application/octet-stream" sparkle:edSignature="QG1xzuQVMj2JIAA7bmCRx8Zp0HFgGrM2UtKCACTNC07gcDuZAImt2ymTO4DeEQGogRGygYoM8DWLK49Ink+MAg=="/>
+        </item>
+        <item>
             <title>0.40.0</title>
             <pubDate>Mon, 11 May 2026 17:38:50 +0000</pubDate>
             <sparkle:version>80</sparkle:version>
