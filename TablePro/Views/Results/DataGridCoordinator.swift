@@ -11,6 +11,7 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
 {
     var tableRowsProvider: @MainActor () -> TableRows = { TableRows() }
     var tableRowsMutator: @MainActor (@MainActor (inout TableRows) -> Void) -> Void = { _ in }
+    var paginationOffsetProvider: @MainActor () -> Int = { 0 }
     var changeManager: AnyChangeManager
     var isEditable: Bool
     var sortedIDs: [RowID]?
@@ -223,6 +224,17 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
         let tableRows = tableRowsProvider()
         cachedRowCount = sortedIDs?.count ?? tableRows.count
         cachedColumnCount = tableRows.columns.count
+        resizeRowNumberColumnForCurrentRange()
+    }
+
+    func resizeRowNumberColumnForCurrentRange() {
+        guard let tableView,
+              let column = tableView.tableColumns.first(where: {
+                  $0.identifier == ColumnIdentitySchema.rowNumberIdentifier
+              }),
+              !column.isHidden else { return }
+        let maxRowNumber = paginationOffsetProvider() + cachedRowCount
+        DataGridView.sizeRowNumberColumn(column, forMaxRowNumber: maxRowNumber)
     }
 
     func applyInsertedRows(_ indices: IndexSet) {
