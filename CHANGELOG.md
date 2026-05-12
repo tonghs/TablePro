@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.40.1] - 2026-05-12
+
 ### Changed
 
 - Quick Switcher matches the Open Database dialog and shows a Recent section per connection.
@@ -1754,7 +1756,8 @@ TablePro is a native macOS database client built with SwiftUI and AppKit, design
     - Custom SQL query templates
     - Performance optimized for large datasets
 
-[Unreleased]: https://github.com/TableProApp/TablePro/compare/v0.40.0...HEAD
+[Unreleased]: https://github.com/TableProApp/TablePro/compare/v0.40.1...HEAD
+[0.40.1]: https://github.com/TableProApp/TablePro/compare/v0.40.0...v0.40.1
 [0.40.0]: https://github.com/TableProApp/TablePro/compare/v0.39.1...v0.40.0
 [0.39.1]: https://github.com/TableProApp/TablePro/compare/v0.39.0...v0.39.1
 [0.39.0]: https://github.com/TableProApp/TablePro/compare/v0.38.0...v0.39.0
