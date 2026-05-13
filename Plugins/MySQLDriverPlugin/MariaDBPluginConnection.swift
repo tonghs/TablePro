@@ -48,29 +48,6 @@ struct MariaDBPluginQueryResult {
 
 // MARK: - SSL Configuration
 
-struct MySQLSSLConfig {
-    enum Mode: String {
-        case disabled = "Disabled"
-        case preferred = "Preferred"
-        case required = "Required"
-        case verifyCa = "Verify CA"
-        case verifyIdentity = "Verify Identity"
-    }
-
-    let mode: Mode
-    let caCertificatePath: String
-    let clientCertificatePath: String
-    let clientKeyPath: String
-
-    init(from fields: [String: String]) {
-        self.mode = Mode(rawValue: fields["sslMode"] ?? "Disabled") ?? .disabled
-        self.caCertificatePath = fields["sslCaCertPath"] ?? ""
-        self.clientCertificatePath = fields["sslClientCertPath"] ?? ""
-        self.clientKeyPath = fields["sslClientKeyPath"] ?? ""
-    }
-}
-
-
 // MARK: - Type Mapping
 
 func mysqlTypeToString(_ fieldPtr: UnsafePointer<MYSQL_FIELD>) -> String {
@@ -166,7 +143,7 @@ final class MariaDBPluginConnection: @unchecked Sendable {
     private let user: String
     private let password: String?
     private let database: String
-    private let sslConfig: MySQLSSLConfig
+    private let sslConfig: SSLConfiguration
 
     private let stateLock = NSLock()
     private var _isConnected: Bool = false
@@ -199,7 +176,7 @@ final class MariaDBPluginConnection: @unchecked Sendable {
         user: String,
         password: String?,
         database: String,
-        sslConfig: MySQLSSLConfig
+        sslConfig: SSLConfiguration
     ) {
         self.host = host
         self.port = UInt32(port)
@@ -265,7 +242,7 @@ final class MariaDBPluginConnection: @unchecked Sendable {
                 mysql_options(mysql, MYSQL_OPT_SSL_VERIFY_SERVER_CERT, &sslVerify)
             }
 
-            if !self.sslConfig.caCertificatePath.isEmpty {
+            if self.sslConfig.verifiesCertificate, !self.sslConfig.caCertificatePath.isEmpty {
                 _ = self.sslConfig.caCertificatePath.withCString { path in
                     mysql_options(mysql, MYSQL_OPT_SSL_CA, path)
                 }

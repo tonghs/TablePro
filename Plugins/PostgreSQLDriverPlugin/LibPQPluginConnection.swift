@@ -14,39 +14,6 @@ import TableProPluginKit
 
 private let logger = Logger(subsystem: "com.TablePro.PostgreSQLDriver", category: "LibPQPluginConnection")
 
-// MARK: - SSL Configuration
-
-struct PQSSLConfig {
-    var mode: String = "Disabled"
-    var caCertificatePath: String = ""
-    var clientCertificatePath: String = ""
-    var clientKeyPath: String = ""
-
-    init() {}
-
-    init(additionalFields: [String: String]) {
-        self.mode = additionalFields["sslMode"] ?? "Disabled"
-        self.caCertificatePath = additionalFields["sslCaCertPath"] ?? ""
-        self.clientCertificatePath = additionalFields["sslClientCertPath"] ?? ""
-        self.clientKeyPath = additionalFields["sslClientKeyPath"] ?? ""
-    }
-
-    var libpqSslMode: String {
-        switch mode {
-        case "Disabled": return "disable"
-        case "Preferred": return "prefer"
-        case "Required": return "require"
-        case "Verify CA": return "verify-ca"
-        case "Verify Identity": return "verify-full"
-        default: return "disable"
-        }
-    }
-
-    var verifiesCertificate: Bool {
-        mode == "Verify CA" || mode == "Verify Identity"
-    }
-}
-
 // MARK: - Error Types
 
 struct LibPQPluginError: Error {
@@ -125,7 +92,7 @@ final class LibPQPluginConnection: @unchecked Sendable {
     private let user: String
     private let password: String?
     private let database: String
-    private let sslConfig: PQSSLConfig
+    private let sslConfig: SSLConfiguration
 
     private let stateLock = NSLock()
     private var _isConnected: Bool = false
@@ -159,7 +126,7 @@ final class LibPQPluginConnection: @unchecked Sendable {
         user: String,
         password: String?,
         database: String,
-        sslConfig: PQSSLConfig = PQSSLConfig()
+        sslConfig: SSLConfiguration = SSLConfiguration()
     ) {
         self.host = host
         self.port = port
@@ -199,7 +166,7 @@ final class LibPQPluginConnection: @unchecked Sendable {
                 connStr += " password='\(escapeConnParam(password))'"
             }
 
-            connStr += " sslmode='\(sslConfig.libpqSslMode)'"
+            connStr += " sslmode='\(LibPQSSLMapping.sslmode(for: sslConfig.mode))'"
 
             if sslConfig.verifiesCertificate, !sslConfig.caCertificatePath.isEmpty {
                 connStr += " sslrootcert='\(escapeConnParam(sslConfig.caCertificatePath))'"
