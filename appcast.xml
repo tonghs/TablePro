@@ -3,6 +3,47 @@
     <channel>
         <title>TablePro</title>
         <item>
+            <title>0.40.3</title>
+            <pubDate>Wed, 13 May 2026 03:13:19 +0000</pubDate>
+            <sparkle:version>83</sparkle:version>
+            <sparkle:shortVersionString>0.40.3</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description><![CDATA[<h3>Fixed</h3>
+<ul>
+<li>AI Chat: scrolling stays smooth on long conversations and stream completion no longer briefly hides the chat. (#1239)</li>
+<li>AI Chat: starting a new conversation no longer carries context from the previous one.</li>
+<li>PostgreSQL: connecting to servers older than 9.3 no longer fails on schema load. (#1240)</li>
+<li>MySQL: EXPLAIN now offers a plain variant that works on every version.</li>
+<li>MSSQL: editing a view on SQL Server 2014 or earlier no longer fails with a syntax error.</li>
+<li>Cassandra: connecting to a 2.x server now shows a clear unsupported-version message instead of failing on sidebar load.</li>
+<li>MongoDB: connecting to servers older than 3.4 no longer fails on the database listing.</li>
+<li>ClickHouse: the index sidebar no longer fails on versions older than 19.17.</li>
+</ul>
+]]></description>
+            <enclosure url="https://github.com/TableProApp/TablePro/releases/download/v0.40.3/TablePro-0.40.3-arm64.zip" length="20864292" type="application/octet-stream" sparkle:edSignature="Kp61TugT3u1yi6niZwPlo3bAzS8bHfhcqhCBThnUAg9RWir8xW3KTwFzO0MgBrj+khYgsXpUTgE+W4MlL4G8Cw=="/>
+        </item>
+        <item>
+            <title>0.40.3</title>
+            <pubDate>Wed, 13 May 2026 03:13:19 +0000</pubDate>
+            <sparkle:version>83</sparkle:version>
+            <sparkle:shortVersionString>0.40.3</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[<h3>Fixed</h3>
+<ul>
+<li>AI Chat: scrolling stays smooth on long conversations and stream completion no longer briefly hides the chat. (#1239)</li>
+<li>AI Chat: starting a new conversation no longer carries context from the previous one.</li>
+<li>PostgreSQL: connecting to servers older than 9.3 no longer fails on schema load. (#1240)</li>
+<li>MySQL: EXPLAIN now offers a plain variant that works on every version.</li>
+<li>MSSQL: editing a view on SQL Server 2014 or earlier no longer fails with a syntax error.</li>
+<li>Cassandra: connecting to a 2.x server now shows a clear unsupported-version message instead of failing on sidebar load.</li>
+<li>MongoDB: connecting to servers older than 3.4 no longer fails on the database listing.</li>
+<li>ClickHouse: the index sidebar no longer fails on versions older than 19.17.</li>
+</ul>
+]]></description>
+            <enclosure url="https://github.com/TableProApp/TablePro/releases/download/v0.40.3/TablePro-0.40.3-x86_64.zip" length="22109667" type="application/octet-stream" sparkle:edSignature="mG9gGdUJKbG8QIpVQWO4BWJcyQ6HzoY60Qhmb29ziLcjT0kKg5Eu2wzd3WrAKADe8DRNBjIeKmduAvYjYBjgDw=="/>
+        </item>
+        <item>
             <title>0.40.2</title>
             <pubDate>Tue, 12 May 2026 13:39:58 +0000</pubDate>
             <sparkle:version>82</sparkle:version>
