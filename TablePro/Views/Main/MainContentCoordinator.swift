@@ -49,6 +49,8 @@ enum ActiveSheet: Identifiable {
     case exportDialog
     case importDialog
     case exportQueryResults
+    case backupDatabase
+    case restoreDatabase
     case maintenance(operation: String, tableName: String)
 
     var id: String {
@@ -60,6 +62,8 @@ enum ActiveSheet: Identifiable {
         case .exportDialog: "exportDialog"
         case .importDialog: "importDialog"
         case .exportQueryResults: "exportQueryResults"
+        case .backupDatabase: "backupDatabase"
+        case .restoreDatabase: "restoreDatabase"
         case .maintenance(let operation, let tableName): "maintenance-\(operation)-\(tableName)"
         }
     }

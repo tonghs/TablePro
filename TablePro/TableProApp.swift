@@ -303,6 +303,20 @@ struct AppMenuCommands: Commands {
                     || actions?.isReadOnly ?? false
                     || !(actions.map { PluginManager.shared.supportsImport(for: $0.currentDatabaseType) } ?? true)
             )
+
+            Button(String(localized: "Backup Dump...")) {
+                actions?.backupDatabase()
+            }
+            .disabled(!(actions?.isConnected ?? false) || !(actions?.supportsBackup ?? false))
+
+            Button(String(localized: "Restore Dump...")) {
+                actions?.restoreDatabase()
+            }
+            .disabled(
+                !(actions?.isConnected ?? false)
+                    || !(actions?.supportsRestore ?? false)
+                    || actions?.isReadOnly ?? false
+            )
         }
 
         // Query menu

@@ -688,6 +688,24 @@ final class MainContentCommandActions {
         coordinator?.openImportDialog()
     }
 
+    func backupDatabase() {
+        coordinator?.activeSheet = .backupDatabase
+    }
+
+    /// Backups currently ship for PostgreSQL and Redshift (both use pg_dump).
+    var supportsBackup: Bool {
+        connection.type == .postgresql || connection.type == .redshift
+    }
+
+    /// Restore is offered for the same database types as backup. The actual
+    /// flow opens NSOpenPanel for the .dump file first, then opens the
+    /// `restoreDatabase` sheet to pick the target database.
+    var supportsRestore: Bool { supportsBackup }
+
+    func restoreDatabase() {
+        coordinator?.activeSheet = .restoreDatabase
+    }
+
     func saveAsFavorite() {
         coordinator?.saveCurrentQueryAsFavorite()
     }
