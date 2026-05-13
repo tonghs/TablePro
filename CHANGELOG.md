@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.40.3] - 2026-05-13
+
 ### Fixed
 
 - AI Chat: scrolling stays smooth on long conversations and stream completion no longer briefly hides the chat. (#1239)
@@ -1793,7 +1795,8 @@ TablePro is a native macOS database client built with SwiftUI and AppKit, design
     - Custom SQL query templates
     - Performance optimized for large datasets
 
-[Unreleased]: https://github.com/TableProApp/TablePro/compare/v0.40.2...HEAD
+[Unreleased]: https://github.com/TableProApp/TablePro/compare/v0.40.3...HEAD
+[0.40.3]: https://github.com/TableProApp/TablePro/compare/v0.40.2...v0.40.3
 [0.40.2]: https://github.com/TableProApp/TablePro/compare/v0.40.1...v0.40.2
 [0.40.1]: https://github.com/TableProApp/TablePro/compare/v0.40.0...v0.40.1
 [0.40.0]: https://github.com/TableProApp/TablePro/compare/v0.39.1...v0.40.0
