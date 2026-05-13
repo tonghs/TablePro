@@ -11,6 +11,7 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
 {
     var tableRowsProvider: @MainActor () -> TableRows = { TableRows() }
     var tableRowsMutator: @MainActor (@MainActor (inout TableRows) -> Void) -> Void = { _ in }
+    var paginationOffsetProvider: @MainActor () -> Int = { 0 }
     var changeManager: AnyChangeManager
     var isEditable: Bool
     var sortedIDs: [RowID]?
@@ -18,6 +19,8 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
     private let displayCache = RowDisplayCache()
     weak var delegate: (any DataGridViewDelegate)?
     weak var activeFKPreviewPopover: NSPopover?
+    var activeFKPreviewModel: FKPreviewModel?
+    var activeFKPreviewColumnIndex: Int?
     var dropdownColumns: Set<Int>?
     var typePickerColumns: Set<Int>?
     var customDropdownOptions: [Int: [String]]?
@@ -214,13 +217,24 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
         tableRowsController.detach()
         delegate = nil
         activeFKPreviewPopover?.close()
-        activeFKPreviewPopover = nil
+        clearFKPreviewState()
     }
 
     func updateCache() {
         let tableRows = tableRowsProvider()
         cachedRowCount = sortedIDs?.count ?? tableRows.count
         cachedColumnCount = tableRows.columns.count
+        resizeRowNumberColumnForCurrentRange()
+    }
+
+    func resizeRowNumberColumnForCurrentRange() {
+        guard let tableView,
+              let column = tableView.tableColumns.first(where: {
+                  $0.identifier == ColumnIdentitySchema.rowNumberIdentifier
+              }),
+              !column.isHidden else { return }
+        let maxRowNumber = paginationOffsetProvider() + cachedRowCount
+        DataGridView.sizeRowNumberColumn(column, forMaxRowNumber: maxRowNumber)
     }
 
     func applyInsertedRows(_ indices: IndexSet) {
@@ -477,13 +491,19 @@ final class TableViewCoordinator: NSObject, NSTableViewDelegate, NSTableViewData
             tableView.reloadData(forRowIndexes: rowSet, columnIndexes: colSet)
         case .rowsInserted(let indices):
             guard !indices.isEmpty else { return }
+            overlayEditor?.dismiss(commit: false)
+            dismissFKPreviewOnColumnChange()
             appendInsertedIDsToSortedIDs(at: indices)
             applyInsertedRows(indices)
         case .rowsRemoved(let indices):
             guard !indices.isEmpty else { return }
+            overlayEditor?.dismiss(commit: false)
+            dismissFKPreviewOnColumnChange()
             removeMissingIDsFromSortedIDs()
             applyRemovedRows(indices)
         case .columnsReplaced, .fullReplace:
+            overlayEditor?.dismiss(commit: false)
+            dismissFKPreviewOnColumnChange()
             sortedIDs = nil
             applyFullReplace()
         }

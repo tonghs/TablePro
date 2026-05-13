@@ -44,18 +44,26 @@ struct DisplayFormatsCacheEntry {
 enum ActiveSheet: Identifiable {
     case databaseSwitcher
     case quickSwitcher
+    case connectionSwitcher
+    case sqlPreview
     case exportDialog
     case importDialog
     case exportQueryResults
+    case backupDatabase
+    case restoreDatabase(fileURL: URL)
     case maintenance(operation: String, tableName: String)
 
     var id: String {
         switch self {
         case .databaseSwitcher: "databaseSwitcher"
         case .quickSwitcher: "quickSwitcher"
+        case .connectionSwitcher: "connectionSwitcher"
+        case .sqlPreview: "sqlPreview"
         case .exportDialog: "exportDialog"
         case .importDialog: "importDialog"
         case .exportQueryResults: "exportQueryResults"
+        case .backupDatabase: "backupDatabase"
+        case .restoreDatabase(let fileURL): "restoreDatabase-\(fileURL.path)"
         case .maintenance(let operation, let tableName): "maintenance-\(operation)-\(tableName)"
         }
     }

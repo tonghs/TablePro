@@ -4,6 +4,61 @@ description: "Product updates and announcements for TablePro"
 rss: true
 ---
 
+<Update label="May 13, 2026" description="v0.40.3">
+  ### Bug Fixes
+
+  - **AI Chat**: Scrolling stays smooth on long conversations and stream completion no longer briefly hides the chat (#1239)
+  - **AI Chat**: Starting a new conversation no longer carries context from the previous one
+  - **PostgreSQL**: Connecting to servers older than 9.3 no longer fails on schema load (#1240)
+  - **MySQL**: EXPLAIN now offers a plain variant that works on every version
+  - **MSSQL**: Editing a view on SQL Server 2014 or earlier no longer fails with a syntax error
+  - **Cassandra**: Connecting to a 2.x server now shows a clear unsupported-version message instead of failing on sidebar load
+  - **MongoDB**: Connecting to servers older than 3.4 no longer fails on the database listing
+  - **ClickHouse**: The index sidebar no longer fails on versions older than 19.17
+</Update>
+
+<Update label="May 12, 2026" description="v0.40.2">
+  ### New Features
+
+  - **Set Value SQL Presets**: Right-click a date, datetime, or timestamp cell to insert `CURRENT_DATE`, `CURRENT_TIME`, `NOW()`, or `CURRENT_TIMESTAMP`, filtered by column type
+  - **Import from Other App on Welcome Screen**: One-click button on the welcome left pane to import connections from TablePlus, Sequel Ace, or DBeaver
+
+  ### Improvements
+
+  - **Row Numbers Continue Across Pages**: The `#` column reads `1001-2000` on page 2 instead of restarting at 1, and auto-sizes so long numbers no longer clip
+  - **Foreign Key Preview Follows Selection**: Press Space on an FK cell, then arrow up or down. The popover slides to the next row and refreshes its content
+  - **Inline Editor for Date Cells**: Double-click a `DATE`, `DATETIME`, or `TIMESTAMP` cell to type a new value directly; the popover date picker is removed
+  - **Inline Connecting State**: The connection window shows the connecting state with a Cancel button instead of an empty sidebar
+
+  ### Bug Fixes
+
+  - Closing the connection window during a slow connect no longer leaves a stuck "Connecting…" window or a stray failure alert (#1185)
+  - Cmd+Z while editing a cell now undoes typing in the editor; pressing it after dismissing no longer crashes
+  - Cmd+Z right after Add Row no longer leaves a stranded editor over the removed row
+  - Editing a NULL cell and dismissing without typing no longer flips the value to an empty string
+  - Double-clicking another cell while editing no longer drops pending changes or stalls the new editor
+  - Double-clicking an enum, set, or boolean cell now opens the inline text editor; the chevron still opens the picker
+  - Chevron-accessory cells (enum, boolean, JSON, blob) no longer truncate short values that fit the full width
+  - DATE columns no longer render a phantom `00:00:00` time suffix
+  - Adding a new row no longer renders the row on top of the auto-opened editor mid-animation
+</Update>
+
+<Update label="May 12, 2026" description="v0.40.1">
+  ### Improvements
+
+  - **Quick Switcher**: Matches the Open Database dialog and shows a Recent section per connection
+  - **Connection Switcher and SQL Preview**: Open as sheets so they work from the toolbar, overflow menu, and keyboard shortcuts
+  - **Toolbar**: Filters button moved out; the bottom-bar Filters control remains
+  - **Welcome Screen**: Drops the Import Connections button; both import flows remain in the + menu
+
+  ### Bug Fixes
+
+  - Toolbar overflow menu entries now fire their action when the window is narrowed
+  - SQL Preview no longer freezes when previewing a very large batch
+  - Quick Switcher crash on macOS 26
+  - Registry updates for bundled drivers (ClickHouse, Redis) now persist after restart
+</Update>
+
 <Update label="May 12, 2026" description="v0.40.0">
   ### New Features
 

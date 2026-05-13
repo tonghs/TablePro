@@ -109,6 +109,21 @@ enum DateFormatOption: String, Codable, CaseIterable, Identifiable {
     }
 
     var formatString: String { rawValue }
+
+    var dateOnlyFormatString: String {
+        switch self {
+        case .iso8601, .iso8601Date: return "yyyy-MM-dd"
+        case .usLong, .usShort: return "MM/dd/yyyy"
+        case .euLong, .euShort: return "dd/MM/yyyy"
+        }
+    }
+
+    var timeOnlyFormatString: String {
+        switch self {
+        case .usLong: return "hh:mm:ss a"
+        default: return "HH:mm:ss"
+        }
+    }
 }
 
 /// Data grid settings
@@ -347,8 +362,17 @@ struct TerminalSettings: Codable, Equatable {
     var bellEnabled: Bool = true
     var themeName: String = ""
 
-    /// Per-database CLI path overrides (empty = auto-detect)
+    /// Per-database CLI path overrides (empty = auto-detect).
+    /// Keys are `DatabaseType.rawValue` for interactive CLIs, plus
+    /// `TerminalSettings.pgDumpCliPathKey` and `TerminalSettings.pgRestoreCliPathKey`
+    /// for the PostgreSQL backup/restore binaries.
     var cliPaths: [String: String] = [:]
+
+    /// Key under `cliPaths` for the pg_dump backup binary path.
+    static let pgDumpCliPathKey = "pg_dump"
+
+    /// Key under `cliPaths` for the pg_restore binary path.
+    static let pgRestoreCliPathKey = "pg_restore"
 
     static let `default` = TerminalSettings()
 

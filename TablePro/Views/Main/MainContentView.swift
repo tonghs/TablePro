@@ -198,6 +198,21 @@ struct MainContentView: View {
                 connection: connection,
                 initialFileURL: coordinator.importFileURL
             )
+        case .backupDatabase:
+            BackupDatabaseFlow(
+                isPresented: dismissBinding,
+                connection: connectionWithCurrentDatabase,
+                initialDatabase: DatabaseManager.shared.session(for: connection.id)?.currentDatabase
+                    ?? connection.database
+            )
+        case .restoreDatabase(let fileURL):
+            RestoreDatabaseFlow(
+                isPresented: dismissBinding,
+                connection: connectionWithCurrentDatabase,
+                initialDatabase: DatabaseManager.shared.session(for: connection.id)?.currentDatabase
+                    ?? connection.database,
+                sourceURL: fileURL
+            )
         case .maintenance(let operation, let tableName):
             MaintenanceSheet(
                 operation: operation,
@@ -212,6 +227,14 @@ struct MainContentView: View {
                 connectionId: connection.id,
                 databaseType: connection.type,
                 onSelect: coordinator.handleQuickSwitcherSelection
+            )
+        case .connectionSwitcher:
+            ConnectionSwitcherSheet(isPresented: dismissBinding)
+        case .sqlPreview:
+            SQLReviewSheet(
+                isPresented: dismissBinding,
+                statements: coordinator.toolbarState.previewStatements,
+                databaseType: coordinator.toolbarState.databaseType
             )
         }
     }

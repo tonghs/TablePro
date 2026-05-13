@@ -3,6 +3,161 @@
     <channel>
         <title>TablePro</title>
         <item>
+            <title>0.40.3</title>
+            <pubDate>Wed, 13 May 2026 03:13:19 +0000</pubDate>
+            <sparkle:version>83</sparkle:version>
+            <sparkle:shortVersionString>0.40.3</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description><![CDATA[<h3>Fixed</h3>
+<ul>
+<li>AI Chat: scrolling stays smooth on long conversations and stream completion no longer briefly hides the chat. (#1239)</li>
+<li>AI Chat: starting a new conversation no longer carries context from the previous one.</li>
+<li>PostgreSQL: connecting to servers older than 9.3 no longer fails on schema load. (#1240)</li>
+<li>MySQL: EXPLAIN now offers a plain variant that works on every version.</li>
+<li>MSSQL: editing a view on SQL Server 2014 or earlier no longer fails with a syntax error.</li>
+<li>Cassandra: connecting to a 2.x server now shows a clear unsupported-version message instead of failing on sidebar load.</li>
+<li>MongoDB: connecting to servers older than 3.4 no longer fails on the database listing.</li>
+<li>ClickHouse: the index sidebar no longer fails on versions older than 19.17.</li>
+</ul>
+]]></description>
+            <enclosure url="https://github.com/TableProApp/TablePro/releases/download/v0.40.3/TablePro-0.40.3-arm64.zip" length="20864292" type="application/octet-stream" sparkle:edSignature="Kp61TugT3u1yi6niZwPlo3bAzS8bHfhcqhCBThnUAg9RWir8xW3KTwFzO0MgBrj+khYgsXpUTgE+W4MlL4G8Cw=="/>
+        </item>
+        <item>
+            <title>0.40.3</title>
+            <pubDate>Wed, 13 May 2026 03:13:19 +0000</pubDate>
+            <sparkle:version>83</sparkle:version>
+            <sparkle:shortVersionString>0.40.3</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[<h3>Fixed</h3>
+<ul>
+<li>AI Chat: scrolling stays smooth on long conversations and stream completion no longer briefly hides the chat. (#1239)</li>
+<li>AI Chat: starting a new conversation no longer carries context from the previous one.</li>
+<li>PostgreSQL: connecting to servers older than 9.3 no longer fails on schema load. (#1240)</li>
+<li>MySQL: EXPLAIN now offers a plain variant that works on every version.</li>
+<li>MSSQL: editing a view on SQL Server 2014 or earlier no longer fails with a syntax error.</li>
+<li>Cassandra: connecting to a 2.x server now shows a clear unsupported-version message instead of failing on sidebar load.</li>
+<li>MongoDB: connecting to servers older than 3.4 no longer fails on the database listing.</li>
+<li>ClickHouse: the index sidebar no longer fails on versions older than 19.17.</li>
+</ul>
+]]></description>
+            <enclosure url="https://github.com/TableProApp/TablePro/releases/download/v0.40.3/TablePro-0.40.3-x86_64.zip" length="22109667" type="application/octet-stream" sparkle:edSignature="mG9gGdUJKbG8QIpVQWO4BWJcyQ6HzoY60Qhmb29ziLcjT0kKg5Eu2wzd3WrAKADe8DRNBjIeKmduAvYjYBjgDw=="/>
+        </item>
+        <item>
+            <title>0.40.2</title>
+            <pubDate>Tue, 12 May 2026 13:39:58 +0000</pubDate>
+            <sparkle:version>82</sparkle:version>
+            <sparkle:shortVersionString>0.40.2</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description><![CDATA[<h3>Added</h3>
+<ul>
+<li>Right-click Set Value on date, datetime, and timestamp cells now offers `CURRENT_DATE`, `CURRENT_TIME`, `NOW()`, and `CURRENT_TIMESTAMP`, filtered by column type.</li>
+<li>Welcome screen left pane gains an Import from Other App button.</li>
+</ul>
+<h3>Changed</h3>
+<ul>
+<li>Row numbers in the data grid continue across pages and the `#` column auto-sizes to fit the widest visible number.</li>
+<li>Date, datetime, and timestamp cells use the standard inline text editor; the popover date picker is removed.</li>
+<li>Foreign key preview popover follows the selected row as you arrow up or down.</li>
+<li>The connection window shows the connecting state inline with a Cancel button.</li>
+</ul>
+<h3>Fixed</h3>
+<ul>
+<li>Closing the connection window during a slow connect no longer leaves a stuck "Connecting…" window or a stray failure alert (#1185).</li>
+<li>Cmd+Z while editing a cell now undoes typing in the editor; pressing it after dismissing the editor no longer crashes.</li>
+<li>Cmd+Z right after Add Row no longer leaves a stranded editor floating over the removed row.</li>
+<li>Editing a NULL cell and dismissing without typing no longer flips the value to an empty string.</li>
+<li>Double-clicking another cell while editing no longer delays the new editor or drops pending changes on the previous one.</li>
+<li>Double-clicking an enum, set, or boolean cell now opens the inline text editor; the chevron still opens the picker popover.</li>
+<li>Chevron-accessory cells (enum, boolean, JSON, blob) no longer truncate short values that fit the full cell width.</li>
+<li>DATE columns no longer render a phantom `00:00:00` time suffix.</li>
+<li>Adding a new row no longer renders the row on top of the auto-opened cell editor mid-animation.</li>
+</ul>
+]]></description>
+            <enclosure url="https://github.com/TableProApp/TablePro/releases/download/v0.40.2/TablePro-0.40.2-arm64.zip" length="20859947" type="application/octet-stream" sparkle:edSignature="WdCliaccGeJi4vP6dKQ94f98IOk4nxifqD32eLo3E//uOsBQKPFfOg2xFHmmbfQfwCGYE5jXpIvO/k5rtRlVDQ=="/>
+        </item>
+        <item>
+            <title>0.40.2</title>
+            <pubDate>Tue, 12 May 2026 13:39:59 +0000</pubDate>
+            <sparkle:version>82</sparkle:version>
+            <sparkle:shortVersionString>0.40.2</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[<h3>Added</h3>
+<ul>
+<li>Right-click Set Value on date, datetime, and timestamp cells now offers `CURRENT_DATE`, `CURRENT_TIME`, `NOW()`, and `CURRENT_TIMESTAMP`, filtered by column type.</li>
+<li>Welcome screen left pane gains an Import from Other App button.</li>
+</ul>
+<h3>Changed</h3>
+<ul>
+<li>Row numbers in the data grid continue across pages and the `#` column auto-sizes to fit the widest visible number.</li>
+<li>Date, datetime, and timestamp cells use the standard inline text editor; the popover date picker is removed.</li>
+<li>Foreign key preview popover follows the selected row as you arrow up or down.</li>
+<li>The connection window shows the connecting state inline with a Cancel button.</li>
+</ul>
+<h3>Fixed</h3>
+<ul>
+<li>Closing the connection window during a slow connect no longer leaves a stuck "Connecting…" window or a stray failure alert (#1185).</li>
+<li>Cmd+Z while editing a cell now undoes typing in the editor; pressing it after dismissing the editor no longer crashes.</li>
+<li>Cmd+Z right after Add Row no longer leaves a stranded editor floating over the removed row.</li>
+<li>Editing a NULL cell and dismissing without typing no longer flips the value to an empty string.</li>
+<li>Double-clicking another cell while editing no longer delays the new editor or drops pending changes on the previous one.</li>
+<li>Double-clicking an enum, set, or boolean cell now opens the inline text editor; the chevron still opens the picker popover.</li>
+<li>Chevron-accessory cells (enum, boolean, JSON, blob) no longer truncate short values that fit the full cell width.</li>
+<li>DATE columns no longer render a phantom `00:00:00` time suffix.</li>
+<li>Adding a new row no longer renders the row on top of the auto-opened cell editor mid-animation.</li>
+</ul>
+]]></description>
+            <enclosure url="https://github.com/TableProApp/TablePro/releases/download/v0.40.2/TablePro-0.40.2-x86_64.zip" length="22104518" type="application/octet-stream" sparkle:edSignature="DsPPoCITf8i5HWoD/6ifeWjDnJXqCKbOg4H+rc6hUSXHJF4ZhX37oP+73VpVZrM6GFI+gagoIrewpbMbbMH+Ag=="/>
+        </item>
+        <item>
+            <title>0.40.1</title>
+            <pubDate>Tue, 12 May 2026 06:27:15 +0000</pubDate>
+            <sparkle:version>81</sparkle:version>
+            <sparkle:shortVersionString>0.40.1</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description><![CDATA[<h3>Changed</h3>
+<ul>
+<li>Quick Switcher matches the Open Database dialog and shows a Recent section per connection.</li>
+<li>Connection Switcher and SQL Preview open as sheets so they work from the toolbar, overflow menu, and keyboard shortcuts.</li>
+<li>Filters button moved out of the toolbar; the bottom-bar Filters control remains.</li>
+<li>Welcome screen drops the Import Connections button; both import flows remain in the + menu.</li>
+</ul>
+<h3>Fixed</h3>
+<ul>
+<li>Toolbar overflow menu entries now fire their action when the window is narrowed.</li>
+<li>SQL Preview no longer freezes when previewing a very large batch.</li>
+<li>Quick Switcher crash on macOS 26.</li>
+<li>Registry updates for bundled drivers (ClickHouse, Redis) now persist after restart.</li>
+</ul>
+]]></description>
+            <enclosure url="https://github.com/TableProApp/TablePro/releases/download/v0.40.1/TablePro-0.40.1-arm64.zip" length="20849463" type="application/octet-stream" sparkle:edSignature="cGyMlou/Kad39luVXnLrIdLUiXXs+8tuKssEeXZGLxp04Bw6X1De2piaD3eE5h/8Pq96mqx6yR3L5XenJzIHBg=="/>
+        </item>
+        <item>
+            <title>0.40.1</title>
+            <pubDate>Tue, 12 May 2026 06:27:16 +0000</pubDate>
+            <sparkle:version>81</sparkle:version>
+            <sparkle:shortVersionString>0.40.1</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[<h3>Changed</h3>
+<ul>
+<li>Quick Switcher matches the Open Database dialog and shows a Recent section per connection.</li>
+<li>Connection Switcher and SQL Preview open as sheets so they work from the toolbar, overflow menu, and keyboard shortcuts.</li>
+<li>Filters button moved out of the toolbar; the bottom-bar Filters control remains.</li>
+<li>Welcome screen drops the Import Connections button; both import flows remain in the + menu.</li>
+</ul>
+<h3>Fixed</h3>
+<ul>
+<li>Toolbar overflow menu entries now fire their action when the window is narrowed.</li>
+<li>SQL Preview no longer freezes when previewing a very large batch.</li>
+<li>Quick Switcher crash on macOS 26.</li>
+<li>Registry updates for bundled drivers (ClickHouse, Redis) now persist after restart.</li>
+</ul>
+]]></description>
+            <enclosure url="https://github.com/TableProApp/TablePro/releases/download/v0.40.1/TablePro-0.40.1-x86_64.zip" length="22085709" type="application/octet-stream" sparkle:edSignature="QG1xzuQVMj2JIAA7bmCRx8Zp0HFgGrM2UtKCACTNC07gcDuZAImt2ymTO4DeEQGogRGygYoM8DWLK49Ink+MAg=="/>
+        </item>
+        <item>
             <title>0.40.0</title>
             <pubDate>Mon, 11 May 2026 17:38:50 +0000</pubDate>
             <sparkle:version>80</sparkle:version>

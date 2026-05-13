@@ -192,6 +192,7 @@ private final class FreeTDSConnection: @unchecked Sendable {
     private let user: String
     private let password: String
     private let database: String
+    private let ssl: SSLConfiguration
     private let lock = NSLock()
     private var _isConnected = false
     private var _isCancelled = false
@@ -202,13 +203,21 @@ private final class FreeTDSConnection: @unchecked Sendable {
         return _isConnected
     }
 
-    init(host: String, port: Int, user: String, password: String, database: String) {
+    init(
+        host: String,
+        port: Int,
+        user: String,
+        password: String,
+        database: String,
+        ssl: SSLConfiguration
+    ) {
         self.queue = DispatchQueue(label: "com.TablePro.freetds.\(host).\(port)", qos: .userInitiated)
         self.host = host
         self.port = port
         self.user = user
         self.password = password
         self.database = database
+        self.ssl = ssl
         _ = freetdsInitOnce
     }
 
@@ -230,6 +239,7 @@ private final class FreeTDSConnection: @unchecked Sendable {
         _ = dbsetlname(login, "us_english", Int32(DBSETNATLANG))
         _ = dbsetlname(login, "UTF-8", Int32(DBSETCHARSET))
         _ = dbsetlversion(login, UInt8(DBVERSION_74))
+        _ = dbsetlname(login, MSSQLSSLMapping.freetdsEncryptionFlag(for: ssl.mode), Int32(DBSETENCRYPT))
 
         freetdsClearError(for: nil)
         let serverName = "\(host):\(port)"
@@ -752,12 +762,18 @@ final class MSSQLPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
     // MARK: - View Templates
 
     func createViewTemplate() -> String? {
-        "CREATE OR ALTER VIEW view_name AS\nSELECT column1, column2\nFROM table_name\nWHERE condition;"
+        if MSSQLCapabilities.parse(serverVersion).hasCreateOrAlterView {
+            return "CREATE OR ALTER VIEW view_name AS\nSELECT column1, column2\nFROM table_name\nWHERE condition;"
+        }
+        return "CREATE VIEW view_name AS\nSELECT column1, column2\nFROM table_name\nWHERE condition;"
     }
 
     func editViewFallbackTemplate(viewName: String) -> String? {
         let quoted = quoteIdentifier(viewName)
-        return "CREATE OR ALTER VIEW \(quoted) AS\nSELECT * FROM table_name;"
+        if MSSQLCapabilities.parse(serverVersion).hasCreateOrAlterView {
+            return "CREATE OR ALTER VIEW \(quoted) AS\nSELECT * FROM table_name;"
+        }
+        return "IF OBJECT_ID('\(viewName)', 'V') IS NOT NULL DROP VIEW \(quoted);\nCREATE VIEW \(quoted) AS\nSELECT * FROM table_name;"
     }
 
     func castColumnToText(_ column: String) -> String {
@@ -783,7 +799,8 @@ final class MSSQLPluginDriver: PluginDatabaseDriver, @unchecked Sendable {
             port: config.port,
             user: config.username,
             password: config.password,
-            database: config.database
+            database: config.database,
+            ssl: config.ssl
         )
         try await conn.connect()
         self.freeTDSConn = conn

@@ -10,17 +10,73 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Redis: Sentinel connection mode. Pick "Sentinel" in the connection form, list the Sentinel nodes, and set the master name; TablePro resolves the current master through the Sentinel quorum and re-resolves automatically on failover (#1021)
+- File > Backup Dump… and Restore Dump… for PostgreSQL and Redshift connections, running `pg_dump -Fc` and `pg_restore --no-owner --no-acl` with live progress, cancel, SSH tunnel reuse, and custom binary paths under Settings > Terminal > CLI Paths (#1211).
 
 ### Changed
 
-- Quick Switcher rewritten as a native SwiftUI sheet matching the Database Switcher style. Adds a Recent section per connection.
-- Double-click handling in sidebar, database switcher, and connection type chooser now uses `contextMenu(forSelectionType:primaryAction:)` instead of a custom NSEvent monitor.
-- Welcome screen drops the "Import Connections..." button; both import flows remain in the `+` menu.
+- PluginKit ABI bumped to v12: `DriverConnectionConfig` now carries a typed `SSLConfiguration` instead of stringified `sslMode` / `sslCaCertPath` keys in `additionalFields`. Every bundled plugin migrated; registry-only plugins (MongoDB, Oracle, DuckDB, MSSQL, Cassandra, Etcd, CloudflareD1, DynamoDB, BigQuery, LibSQL) must be re-tagged and republished before the next app release.
 
 ### Fixed
 
-- Quick Switcher crash on macOS 26 caused by an NSPanel + NSHostingController constraint loop.
-- Registry updates for built-in drivers (ClickHouse, Redis) now stick after restart. Plugin builds previously kept the default `1.0` version, tying with the bundled copy so the user-installed update was pruned on load.
+- Redis: "Required (skip verify)" SSL mode now actually skips certificate verification, matching `redis-cli --tls --insecure`. Previously every mode performed verification because of a phantom dictionary key the app never wrote. Connections to Upstash Redis and similar endpoints with untrusted CAs work (#1247).
+- MSSQL: SSL mode finally affects the connection. `Disabled` / `Preferred` / `Required` / `Verify CA` / `Verify Identity` map to FreeTDS `off` / `request` / `require` / `require` / `require` via `DBSETENCRYPT`. Previously the setting was read and silently ignored.
+- MongoDB: "Required" and "Verify CA" pass the right libmongoc flags (`tlsAllowInvalidCertificates`, `tlsAllowInvalidHostnames`) so connections to self-signed or untrusted-CA servers stop failing on those paths.
+- MySQL: CA certificate is no longer loaded when the user picked a mode that skips verification, matching PostgreSQL.
+
+## [0.40.3] - 2026-05-13
+
+### Fixed
+
+- AI Chat: scrolling stays smooth on long conversations and stream completion no longer briefly hides the chat. (#1239)
+- AI Chat: starting a new conversation no longer carries context from the previous one.
+- PostgreSQL: connecting to servers older than 9.3 no longer fails on schema load. (#1240)
+- MySQL: EXPLAIN now offers a plain variant that works on every version.
+- MSSQL: editing a view on SQL Server 2014 or earlier no longer fails with a syntax error.
+- Cassandra: connecting to a 2.x server now shows a clear unsupported-version message instead of failing on sidebar load.
+- MongoDB: connecting to servers older than 3.4 no longer fails on the database listing.
+- ClickHouse: the index sidebar no longer fails on versions older than 19.17.
+
+## [0.40.2] - 2026-05-12
+
+### Added
+
+- Right-click Set Value on date, datetime, and timestamp cells now offers `CURRENT_DATE`, `CURRENT_TIME`, `NOW()`, and `CURRENT_TIMESTAMP`, filtered by column type.
+- Welcome screen left pane gains an Import from Other App button.
+
+### Changed
+
+- Row numbers in the data grid continue across pages and the `#` column auto-sizes to fit the widest visible number.
+- Date, datetime, and timestamp cells use the standard inline text editor; the popover date picker is removed.
+- Foreign key preview popover follows the selected row as you arrow up or down.
+- The connection window shows the connecting state inline with a Cancel button.
+
+### Fixed
+
+- Closing the connection window during a slow connect no longer leaves a stuck "Connecting…" window or a stray failure alert (#1185).
+- Cmd+Z while editing a cell now undoes typing in the editor; pressing it after dismissing the editor no longer crashes.
+- Cmd+Z right after Add Row no longer leaves a stranded editor floating over the removed row.
+- Editing a NULL cell and dismissing without typing no longer flips the value to an empty string.
+- Double-clicking another cell while editing no longer delays the new editor or drops pending changes on the previous one.
+- Double-clicking an enum, set, or boolean cell now opens the inline text editor; the chevron still opens the picker popover.
+- Chevron-accessory cells (enum, boolean, JSON, blob) no longer truncate short values that fit the full cell width.
+- DATE columns no longer render a phantom `00:00:00` time suffix.
+- Adding a new row no longer renders the row on top of the auto-opened cell editor mid-animation.
+
+## [0.40.1] - 2026-05-12
+
+### Changed
+
+- Quick Switcher matches the Open Database dialog and shows a Recent section per connection.
+- Connection Switcher and SQL Preview open as sheets so they work from the toolbar, overflow menu, and keyboard shortcuts.
+- Filters button moved out of the toolbar; the bottom-bar Filters control remains.
+- Welcome screen drops the Import Connections button; both import flows remain in the + menu.
+
+### Fixed
+
+- Toolbar overflow menu entries now fire their action when the window is narrowed.
+- SQL Preview no longer freezes when previewing a very large batch.
+- Quick Switcher crash on macOS 26.
+- Registry updates for bundled drivers (ClickHouse, Redis) now persist after restart.
 
 ## [0.40.0] - 2026-05-12
 
@@ -1755,7 +1811,10 @@ TablePro is a native macOS database client built with SwiftUI and AppKit, design
     - Custom SQL query templates
     - Performance optimized for large datasets
 
-[Unreleased]: https://github.com/TableProApp/TablePro/compare/v0.40.0...HEAD
+[Unreleased]: https://github.com/TableProApp/TablePro/compare/v0.40.3...HEAD
+[0.40.3]: https://github.com/TableProApp/TablePro/compare/v0.40.2...v0.40.3
+[0.40.2]: https://github.com/TableProApp/TablePro/compare/v0.40.1...v0.40.2
+[0.40.1]: https://github.com/TableProApp/TablePro/compare/v0.40.0...v0.40.1
 [0.40.0]: https://github.com/TableProApp/TablePro/compare/v0.39.1...v0.40.0
 [0.39.1]: https://github.com/TableProApp/TablePro/compare/v0.39.0...v0.39.1
 [0.39.0]: https://github.com/TableProApp/TablePro/compare/v0.38.0...v0.39.0

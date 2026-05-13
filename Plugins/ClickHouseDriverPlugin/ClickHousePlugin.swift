@@ -195,17 +195,13 @@ final class ClickHousePluginDriver: PluginDatabaseDriver, @unchecked Sendable {
     // MARK: - Connection
 
     func connect() async throws {
-        let useTLS = config.additionalFields["sslMode"] != nil
-            && config.additionalFields["sslMode"] != "Disabled"
-        let skipVerification = config.additionalFields["sslMode"] == "Required"
-
         let urlConfig = URLSessionConfiguration.default
         urlConfig.timeoutIntervalForRequest = 30
         urlConfig.timeoutIntervalForResource = 300
 
         lock.lock()
-        if skipVerification {
-            session = URLSession(configuration: urlConfig, delegate: InsecureTLSDelegate(), delegateQueue: nil)
+        if let delegate = ClickHouseTLSDelegate.make(for: config.ssl) {
+            session = URLSession(configuration: urlConfig, delegate: delegate, delegateQueue: nil)
         } else {
             session = URLSession(configuration: urlConfig)
         }
@@ -435,6 +431,8 @@ final class ClickHousePluginDriver: PluginDatabaseDriver, @unchecked Sendable {
             ))
         }
 
+        let caps = ClickHouseCapabilities.parse(serverVersion)
+        guard caps.hasDataSkippingIndicesTable else { return indexes }
         let skippingSql = """
             SELECT name, expr FROM system.data_skipping_indices
             WHERE database = currentDatabase() AND table = '\(escapedTable)'
@@ -909,8 +907,7 @@ final class ClickHousePluginDriver: PluginDatabaseDriver, @unchecked Sendable {
     }
 
     private func buildRequest(query: String, database: String, queryId: String? = nil, params: [String: String?]? = nil) throws -> URLRequest {
-        let useTLS = config.additionalFields["sslMode"] != nil
-            && config.additionalFields["sslMode"] != "Disabled"
+        let useTLS = config.ssl.isEnabled
 
         var components = URLComponents()
         components.scheme = useTLS ? "https" : "http"
@@ -1201,8 +1198,7 @@ final class ClickHousePluginDriver: PluginDatabaseDriver, @unchecked Sendable {
     }
 
     private func buildStreamRequest(query: String, database: String) throws -> URLRequest {
-        let useTLS = config.additionalFields["sslMode"] != nil
-            && config.additionalFields["sslMode"] != "Disabled"
+        let useTLS = config.ssl.isEnabled
 
         var components = URLComponents()
         components.scheme = useTLS ? "https" : "http"
@@ -1321,19 +1317,66 @@ final class ClickHousePluginDriver: PluginDatabaseDriver, @unchecked Sendable {
         "ALTER TABLE \(quoteIdentifier(table)) DROP INDEX \(quoteIdentifier(indexName))"
     }
 
-    // MARK: - TLS Delegate
+}
 
-    private class InsecureTLSDelegate: NSObject, URLSessionDelegate {
-        func urlSession(
-            _ session: URLSession,
-            didReceive challenge: URLAuthenticationChallenge,
-            completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
-        ) {
-            if challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
-               let serverTrust = challenge.protectionSpace.serverTrust {
+// MARK: - TLS Delegate
+
+private final class ClickHouseTLSDelegate: NSObject, URLSessionDelegate, @unchecked Sendable {
+    private enum Strategy {
+        case skipVerify
+        case verifyChain(anchor: SecCertificate?)
+    }
+
+    private let strategy: Strategy
+
+    private init(strategy: Strategy) {
+        self.strategy = strategy
+    }
+
+    /// Returns nil when the default URLSession trust evaluation is correct
+    /// (`.disabled` and `.verifyIdentity`).
+    static func make(for ssl: SSLConfiguration) -> ClickHouseTLSDelegate? {
+        switch ssl.mode {
+        case .disabled, .verifyIdentity:
+            return nil
+        case .preferred, .required:
+            return ClickHouseTLSDelegate(strategy: .skipVerify)
+        case .verifyCa:
+            return ClickHouseTLSDelegate(strategy: .verifyChain(anchor: loadAnchor(at: ssl.caCertificatePath)))
+        }
+    }
+
+    private static func loadAnchor(at path: String) -> SecCertificate? {
+        guard !path.isEmpty, let data = try? Data(contentsOf: URL(fileURLWithPath: path)) else {
+            return nil
+        }
+        return SecCertificateCreateWithData(nil, data as CFData)
+    }
+
+    func urlSession(
+        _ session: URLSession,
+        didReceive challenge: URLAuthenticationChallenge,
+        completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
+    ) {
+        guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
+              let serverTrust = challenge.protectionSpace.serverTrust else {
+            completionHandler(.performDefaultHandling, nil)
+            return
+        }
+
+        switch strategy {
+        case .skipVerify:
+            completionHandler(.useCredential, URLCredential(trust: serverTrust))
+        case .verifyChain(let anchor):
+            if let anchor {
+                SecTrustSetAnchorCertificates(serverTrust, [anchor] as CFArray)
+            }
+            let hostnameAgnostic = SecPolicyCreateSSL(true, nil)
+            SecTrustSetPolicies(serverTrust, [hostnameAgnostic] as CFArray)
+            if SecTrustEvaluateWithError(serverTrust, nil) {
                 completionHandler(.useCredential, URLCredential(trust: serverTrust))
             } else {
-                completionHandler(.performDefaultHandling, nil)
+                completionHandler(.cancelAuthenticationChallenge, nil)
             }
         }
     }

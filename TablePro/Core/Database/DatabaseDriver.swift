@@ -417,6 +417,7 @@ enum DatabaseDriverFactory {
             username: connection.username,
             password: resolvePassword(for: connection, override: passwordOverride),
             database: connection.database,
+            ssl: connection.sslConfig,
             additionalFields: buildAdditionalFields(for: connection, plugin: plugin)
         )
         let pluginDriver = plugin.createDriver(config: config)
@@ -448,12 +449,6 @@ enum DatabaseDriverFactory {
     ) -> [String: String] {
         var fields: [String: String] = [:]
 
-        let ssl = connection.sslConfig
-        fields["sslMode"] = ssl.mode.rawValue
-        fields["sslCaCertPath"] = ssl.caCertificatePath
-        fields["sslClientCertPath"] = ssl.clientCertificatePath
-        fields["sslClientKeyPath"] = ssl.clientKeyPath
-
         if let variant = type(of: plugin).driverVariant(for: connection.type.rawValue) {
             fields["driverVariant"] = variant
         }
@@ -476,7 +471,6 @@ enum DatabaseDriverFactory {
 
         switch connection.type {
         case .mongodb:
-            fields["sslCACertPath"] = ssl.caCertificatePath
             fields["mongoReadPreference"] = connection.mongoReadPreference ?? ""
             fields["mongoWriteConcern"] = connection.mongoWriteConcern ?? ""
         case .redis:

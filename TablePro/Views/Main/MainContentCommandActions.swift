@@ -14,6 +14,7 @@ import Observation
 import os
 import SwiftUI
 import TableProPluginKit
+import UniformTypeIdentifiers
 
 /// Provides command actions for MainContentView, accessible via @FocusedValue
 @MainActor
@@ -688,6 +689,49 @@ final class MainContentCommandActions {
         coordinator?.openImportDialog()
     }
 
+    func backupDatabase() {
+        coordinator?.activeSheet = .backupDatabase
+    }
+
+    var supportsBackup: Bool {
+        connection.type == .postgresql || connection.type == .redshift
+    }
+
+    var supportsRestore: Bool { supportsBackup }
+
+    func restoreDatabase() {
+        Task { @MainActor [weak self] in
+            await self?.presentRestoreSourcePicker()
+        }
+    }
+
+    private func presentRestoreSourcePicker() async {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = false
+        panel.allowsMultipleSelection = false
+        panel.allowedContentTypes = Self.restoreSourceContentTypes
+        panel.title = String(localized: "Choose Dump File")
+        panel.prompt = String(localized: "Choose")
+        panel.message = String(localized: "Select a dump file produced by pg_dump in custom archive format.")
+
+        let response: NSApplication.ModalResponse
+        if let window = NSApp.keyWindow {
+            response = await panel.beginSheetModal(for: window)
+        } else {
+            response = panel.runModal()
+        }
+        guard response == .OK, let url = panel.url else { return }
+        coordinator?.activeSheet = .restoreDatabase(fileURL: url)
+    }
+
+    private static var restoreSourceContentTypes: [UTType] {
+        if let dumpType = UTType(filenameExtension: "dump") {
+            return [dumpType, .data]
+        }
+        return [.data]
+    }
+
     func saveAsFavorite() {
         coordinator?.saveCurrentQueryAsFavorite()
     }
@@ -792,7 +836,7 @@ final class MainContentCommandActions {
     }
 
     func openConnectionSwitcher() {
-        coordinator?.toolbarState.showConnectionSwitcher = true
+        coordinator?.activeSheet = .connectionSwitcher
     }
 
     // MARK: - Undo/Redo (Group A — Called Directly)
@@ -800,17 +844,23 @@ final class MainContentCommandActions {
     func undoChange() {
         if coordinator?.tabManager.selectedTab?.display.resultsViewMode == .structure {
             coordinator?.structureActions?.undo?()
-        } else {
-            coordinator?.contentWindow?.undoManager?.undo()
+            return
         }
+        if NSApp.sendAction(NSSelectorFromString("undo:"), to: nil, from: nil) {
+            return
+        }
+        coordinator?.contentWindow?.undoManager?.undo()
     }
 
     func redoChange() {
         if coordinator?.tabManager.selectedTab?.display.resultsViewMode == .structure {
             coordinator?.structureActions?.redo?()
-        } else {
-            coordinator?.contentWindow?.undoManager?.redo()
+            return
         }
+        if NSApp.sendAction(NSSelectorFromString("redo:"), to: nil, from: nil) {
+            return
+        }
+        coordinator?.contentWindow?.undoManager?.redo()
     }
 
     // MARK: - Group B Broadcast Subscribers
