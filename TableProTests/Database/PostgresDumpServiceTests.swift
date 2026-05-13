@@ -138,6 +138,24 @@ struct PostgresDumpServiceCommandTests {
         #expect(command.environment["PGSSLMODE"] == expected)
     }
 
+    @Test("environment is restricted to a known allowlist plus libpq vars")
+    func environmentIsMinimal() {
+        let command = PostgresDumpService.buildCommand(
+            kind: .backup,
+            executable: URL(fileURLWithPath: "/usr/bin/pg_dump"),
+            effective: connection(sslMode: .required),
+            database: "sales",
+            fileURL: URL(fileURLWithPath: "/tmp/x.dump"),
+            password: "s3cret"
+        )
+        let allowed: Set<String> = [
+            "PATH", "HOME", "USER", "LOGNAME", "SHELL", "TMPDIR", "LANG", "LC_ALL",
+            "PGPASSWORD", "PGSSLMODE"
+        ]
+        let unexpected = Set(command.environment.keys).subtracting(allowed)
+        #expect(unexpected.isEmpty, "unexpected env keys leaked through: \(unexpected)")
+    }
+
     /// Returns the argument immediately following `flag` in the arg list.
     private func slice(after flag: String, in args: [String]) -> String? {
         guard let index = args.firstIndex(of: flag), index + 1 < args.count else { return nil }
@@ -147,11 +165,11 @@ struct PostgresDumpServiceCommandTests {
 
 // MARK: - Fake Runner
 
-/// Test double for `PostgresDumpRunner` that lets tests drive the result.
 private final class FakeDumpRunner: PostgresDumpRunner, @unchecked Sendable {
     private(set) var startedCommand: PostgresDumpCommand?
     private(set) var cancelCount: Int = 0
     private var continuation: CheckedContinuation<PostgresDumpRunResult, Never>?
+    private var bufferedResult: PostgresDumpRunResult?
     private let lock = NSLock()
 
     func start(_ command: PostgresDumpCommand) throws {
@@ -167,20 +185,29 @@ private final class FakeDumpRunner: PostgresDumpRunner, @unchecked Sendable {
     var result: PostgresDumpRunResult {
         get async {
             await withCheckedContinuation { continuation in
-                self.lock.lock()
+                lock.lock()
+                if let buffered = bufferedResult {
+                    bufferedResult = nil
+                    lock.unlock()
+                    continuation.resume(returning: buffered)
+                    return
+                }
                 self.continuation = continuation
-                self.lock.unlock()
+                lock.unlock()
             }
         }
     }
 
-    /// Test driver: resolves the pending `result` await with the given outcome.
     func finish(_ outcome: PostgresDumpRunResult) {
         lock.lock()
-        let continuation = self.continuation
-        self.continuation = nil
-        lock.unlock()
-        continuation?.resume(returning: outcome)
+        if let continuation = self.continuation {
+            self.continuation = nil
+            lock.unlock()
+            continuation.resume(returning: outcome)
+        } else {
+            bufferedResult = outcome
+            lock.unlock()
+        }
     }
 }
 
@@ -200,6 +227,7 @@ struct PostgresDumpServiceStateMachineTests {
     func successfulBackup() async throws {
         let runner = FakeDumpRunner()
         let service = PostgresDumpService(kind: .backup, runnerFactory: { runner })
+        let updates = service.stateUpdates()
 
         #expect(service.state == .idle)
         try service.run(
@@ -209,7 +237,6 @@ struct PostgresDumpServiceStateMachineTests {
             totalBytesEstimate: 1_000
         )
 
-        // Now running
         if case .running(let db, _, _, let total) = service.state {
             #expect(db == "sales")
             #expect(total == 1_000)
@@ -218,12 +245,12 @@ struct PostgresDumpServiceStateMachineTests {
         }
 
         runner.finish(.init(exitCode: 0, stderr: "", wasCancelled: false))
-        try await waitFor { if case .finished = service.state { return true }; return false }
+        let finalState = try await firstMatching(updates) { if case .finished = $0 { return true }; return false }
 
-        if case .finished(let db, _, _) = service.state {
+        if case .finished(let db, _, _) = finalState {
             #expect(db == "sales")
         } else {
-            Issue.record("expected finished, got \(service.state)")
+            Issue.record("expected finished, got \(finalState)")
         }
     }
 
@@ -231,6 +258,7 @@ struct PostgresDumpServiceStateMachineTests {
     func failedRun() async throws {
         let runner = FakeDumpRunner()
         let service = PostgresDumpService(kind: .restore, runnerFactory: { runner })
+        let updates = service.stateUpdates()
 
         try service.run(
             command: fakeCommand(),
@@ -239,12 +267,12 @@ struct PostgresDumpServiceStateMachineTests {
         )
 
         runner.finish(.init(exitCode: 1, stderr: "FATAL: connection refused", wasCancelled: false))
-        try await waitFor { if case .failed = service.state { return true }; return false }
+        let finalState = try await firstMatching(updates) { if case .failed = $0 { return true }; return false }
 
-        if case .failed(let message) = service.state {
+        if case .failed(let message) = finalState {
             #expect(message == "FATAL: connection refused")
         } else {
-            Issue.record("expected failed, got \(service.state)")
+            Issue.record("expected failed, got \(finalState)")
         }
     }
 
@@ -252,6 +280,7 @@ struct PostgresDumpServiceStateMachineTests {
     func cancelRun() async throws {
         let runner = FakeDumpRunner()
         let service = PostgresDumpService(kind: .backup, runnerFactory: { runner })
+        let updates = service.stateUpdates()
 
         try service.run(
             command: fakeCommand(),
@@ -264,8 +293,8 @@ struct PostgresDumpServiceStateMachineTests {
         #expect(runner.cancelCount == 1)
 
         runner.finish(.init(exitCode: -15, stderr: "", wasCancelled: true))
-        try await waitFor { service.state == .cancelled }
-        #expect(service.state == .cancelled)
+        let finalState = try await firstMatching(updates) { $0 == .cancelled }
+        #expect(finalState == .cancelled)
     }
 
     @Test("calling run while already running throws alreadyRunning")
@@ -292,6 +321,7 @@ struct PostgresDumpServiceStateMachineTests {
     func emptyStderrFallback() async throws {
         let runner = FakeDumpRunner()
         let service = PostgresDumpService(kind: .backup, runnerFactory: { runner })
+        let updates = service.stateUpdates()
 
         try service.run(
             command: fakeCommand(),
@@ -299,21 +329,23 @@ struct PostgresDumpServiceStateMachineTests {
             fileURL: URL(fileURLWithPath: "/tmp/test-emptyerr.dump")
         )
         runner.finish(.init(exitCode: 42, stderr: "", wasCancelled: false))
-        try await waitFor { if case .failed = service.state { return true }; return false }
+        let finalState = try await firstMatching(updates) { if case .failed = $0 { return true }; return false }
 
-        if case .failed(let message) = service.state {
+        if case .failed(let message) = finalState {
             #expect(message.contains("42"))
         } else {
-            Issue.record("expected failed, got \(service.state)")
+            Issue.record("expected failed, got \(finalState)")
         }
     }
 
-    /// Polls `condition` every 10ms up to 2 seconds.
-    private func waitFor(_ condition: @MainActor @Sendable () -> Bool) async throws {
-        for _ in 0..<200 {
-            if condition() { return }
-            try await Task.sleep(nanoseconds: 10_000_000)
+    private func firstMatching(
+        _ stream: AsyncStream<PostgresDumpState>,
+        where predicate: @Sendable (PostgresDumpState) -> Bool
+    ) async throws -> PostgresDumpState {
+        for await state in stream where predicate(state) {
+            return state
         }
-        Issue.record("timed out waiting for condition")
+        Issue.record("state stream ended before predicate matched")
+        return .idle
     }
 }

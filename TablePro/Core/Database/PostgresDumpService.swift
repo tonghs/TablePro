@@ -99,6 +99,27 @@ final class PostgresDumpService {
     @ObservationIgnored private let runnerFactory: () -> any PostgresDumpRunner
     @ObservationIgnored private var runner: (any PostgresDumpRunner)?
     @ObservationIgnored private var byteSizeTask: Task<Void, Never>?
+    @ObservationIgnored private var stateObservers: [UUID: AsyncStream<PostgresDumpState>.Continuation] = [:]
+
+    func stateUpdates() -> AsyncStream<PostgresDumpState> {
+        let (stream, continuation) = AsyncStream<PostgresDumpState>.makeStream()
+        let id = UUID()
+        stateObservers[id] = continuation
+        continuation.yield(state)
+        continuation.onTermination = { @Sendable [weak self] _ in
+            Task { @MainActor in
+                self?.stateObservers.removeValue(forKey: id)
+            }
+        }
+        return stream
+    }
+
+    private func setState(_ newState: PostgresDumpState) {
+        state = newState
+        for continuation in stateObservers.values {
+            continuation.yield(newState)
+        }
+    }
 
     /// Default initializer uses the real `Process`-backed runner.
     init(kind: PostgresDumpKind) {
@@ -193,7 +214,7 @@ final class PostgresDumpService {
         try runner.start(command)
         self.runner = runner
 
-        state = .running(database: database, fileURL: fileURL, bytesProcessed: 0, totalBytes: totalBytesEstimate)
+        setState(.running(database: database, fileURL: fileURL, bytesProcessed: 0, totalBytes: totalBytesEstimate))
         if kind == .backup {
             startByteSizePolling(url: fileURL, database: database, totalBytes: totalBytesEstimate)
         }
@@ -206,13 +227,13 @@ final class PostgresDumpService {
 
     func cancel() {
         guard case .running = state else { return }
-        state = .cancelling
+        setState(.cancelling)
         runner?.cancel()
     }
 
     // MARK: - Command Construction
 
-    static func buildCommand(
+    nonisolated static func buildCommand(
         kind: PostgresDumpKind,
         executable: URL,
         effective: DatabaseConnection,
@@ -238,12 +259,12 @@ final class PostgresDumpService {
             args.append(fileURL.path)
         }
 
-        var env = ProcessInfo.processInfo.environment
+        var env = minimalEnvironment()
         if let password, !password.isEmpty {
             env["PGPASSWORD"] = password
         }
-        if effective.sslConfig.isEnabled {
-            env["PGSSLMODE"] = pgSSLMode(effective.sslConfig.mode)
+        if effective.sslConfig.isEnabled, let sslMode = pgSSLMode(effective.sslConfig.mode) {
+            env["PGSSLMODE"] = sslMode
         }
         return PostgresDumpCommand(
             executable: executable,
@@ -253,9 +274,22 @@ final class PostgresDumpService {
         )
     }
 
-    static func pgSSLMode(_ mode: SSLMode) -> String {
+    nonisolated private static let inheritedEnvironmentKeys: [String] = [
+        "PATH", "HOME", "USER", "LOGNAME", "SHELL", "TMPDIR", "LANG", "LC_ALL"
+    ]
+
+    nonisolated static func minimalEnvironment() -> [String: String] {
+        let parent = ProcessInfo.processInfo.environment
+        var env: [String: String] = [:]
+        for key in inheritedEnvironmentKeys where parent[key] != nil {
+            env[key] = parent[key]
+        }
+        return env
+    }
+
+    nonisolated static func pgSSLMode(_ mode: SSLMode) -> String? {
         switch mode {
-        case .disabled: return "disable"
+        case .disabled: return nil
         case .preferred: return "prefer"
         case .required: return "require"
         case .verifyCa: return "verify-ca"
@@ -285,13 +319,13 @@ final class PostgresDumpService {
             if kind == .backup {
                 try? FileManager.default.removeItem(at: fileURL)
             }
-            state = .cancelled
+            setState(.cancelled)
             Self.logger.notice("\(self.kind == .backup ? "pg_dump" : "pg_restore", privacy: .public) cancelled db=\(database, privacy: .public)")
             return
         }
 
         if result.exitCode == 0 {
-            state = .finished(database: database, fileURL: fileURL, bytesProcessed: writtenBytes)
+            setState(.finished(database: database, fileURL: fileURL, bytesProcessed: writtenBytes))
             Self.logger.info("\(self.kind == .backup ? "pg_dump" : "pg_restore", privacy: .public) finished bytes=\(writtenBytes) db=\(database, privacy: .public)")
             return
         }
@@ -302,7 +336,7 @@ final class PostgresDumpService {
         let summary = result.stderr.isEmpty
             ? String(format: String(localized: "Process exited with code %d"), Int(result.exitCode))
             : result.stderr
-        state = .failed(message: summary)
+        setState(.failed(message: summary))
         Self.logger.error("\(self.kind == .backup ? "pg_dump" : "pg_restore", privacy: .public) failed code=\(result.exitCode) db=\(database, privacy: .public) stderr=\(result.stderr, privacy: .public)")
     }
 
@@ -315,12 +349,12 @@ final class PostgresDumpService {
                 guard case .running = self.state else { return }
                 let size = (try? FileManager.default
                     .attributesOfItem(atPath: url.path)[.size] as? Int64) ?? 0
-                self.state = .running(
+                self.setState(.running(
                     database: database,
                     fileURL: url,
                     bytesProcessed: size,
                     totalBytes: totalBytes
-                )
+                ))
             }
         }
     }
@@ -334,21 +368,17 @@ private extension String {
 
 // MARK: - Real Process Runner
 
-/// Concrete `PostgresDumpRunner` that spawns a real subprocess.
-/// stderr is accumulated entirely off the main actor inside the
-/// `readabilityHandler` closure and the termination handler;
-/// only the final string crosses back to MainActor through `result`.
 final class ProcessPostgresDumpRunner: PostgresDumpRunner {
     private let process = Process()
     private let stderrPipe = Pipe()
-    private let bufferLock = NSLock()
+    private let stateLock = NSLock()
     private var stderrBuffer = Data()
-    private var stderrCap = 64_000
     private var wasCancelled = false
+    private var terminationResult: PostgresDumpRunResult?
     private var continuation: CheckedContinuation<PostgresDumpRunResult, Never>?
 
     func start(_ command: PostgresDumpCommand) throws {
-        stderrCap = command.stderrByteCap
+        let stderrCap = command.stderrByteCap
 
         process.executableURL = command.executable
         process.arguments = command.arguments
@@ -359,37 +389,41 @@ final class ProcessPostgresDumpRunner: PostgresDumpRunner {
         stderrPipe.fileHandleForReading.readabilityHandler = { [weak self] handle in
             let chunk = handle.availableData
             guard !chunk.isEmpty, let self else { return }
-            self.bufferLock.lock()
+            self.stateLock.lock()
             self.stderrBuffer.append(chunk)
-            if self.stderrBuffer.count > self.stderrCap {
-                self.stderrBuffer = Data(self.stderrBuffer.suffix(self.stderrCap))
+            if self.stderrBuffer.count > stderrCap {
+                self.stderrBuffer = Data(self.stderrBuffer.suffix(stderrCap))
             }
-            self.bufferLock.unlock()
+            self.stateLock.unlock()
         }
 
         process.terminationHandler = { [weak self] proc in
             guard let self else { return }
             self.stderrPipe.fileHandleForReading.readabilityHandler = nil
 
-            self.bufferLock.lock()
+            self.stateLock.lock()
             let stderrText = String(data: self.stderrBuffer, encoding: .utf8)?
                 .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            self.bufferLock.unlock()
-
             let result = PostgresDumpRunResult(
                 exitCode: proc.terminationStatus,
                 stderr: stderrText,
                 wasCancelled: self.wasCancelled
             )
-            self.continuation?.resume(returning: result)
+            self.terminationResult = result
+            let pending = self.continuation
             self.continuation = nil
+            self.stateLock.unlock()
+
+            pending?.resume(returning: result)
         }
 
         try process.run()
     }
 
     func cancel() {
+        stateLock.lock()
         wasCancelled = true
+        stateLock.unlock()
         if process.isRunning {
             process.terminate()
         }
@@ -398,19 +432,14 @@ final class ProcessPostgresDumpRunner: PostgresDumpRunner {
     var result: PostgresDumpRunResult {
         get async {
             await withCheckedContinuation { continuation in
-                if !process.isRunning {
-                    self.bufferLock.lock()
-                    let stderrText = String(data: self.stderrBuffer, encoding: .utf8)?
-                        .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-                    self.bufferLock.unlock()
-                    continuation.resume(returning: PostgresDumpRunResult(
-                        exitCode: process.terminationStatus,
-                        stderr: stderrText,
-                        wasCancelled: wasCancelled
-                    ))
-                } else {
-                    self.continuation = continuation
+                stateLock.lock()
+                if let cached = terminationResult {
+                    stateLock.unlock()
+                    continuation.resume(returning: cached)
+                    return
                 }
+                self.continuation = continuation
+                stateLock.unlock()
             }
         }
     }
@@ -429,10 +458,11 @@ extension PostgresDumpService {
         database: String
     ) async -> Int64? {
         guard let driver = DatabaseManager.shared.driver(for: connection.id) else { return nil }
-        let escaped = database.replacingOccurrences(of: "'", with: "''")
-        let query = "SELECT pg_database_size('\(escaped)')"
         do {
-            let result = try await driver.execute(query: query)
+            let result = try await driver.executeParameterized(
+                query: "SELECT pg_database_size($1)",
+                parameters: [database]
+            )
             guard let text = result.rows.first?.first?.asText else { return nil }
             return Int64(text)
         } catch {
