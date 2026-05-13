@@ -9,14 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- AI Chat: scrolling no longer pegs CPU at 100% or shows blank chat after a long response. Markdown is parsed once per message and cached, code blocks reuse their editors instead of being recreated on every re-render, and scroll position uses the native `.scrollPosition` API. (#1239)
-- AI Chat: starting a new conversation now resets the Copilot server-side conversation. Previously the next message reused the prior conversation's context.
-- Cassandra: connection now fails fast with a clear "Cassandra 2.x is not supported" message instead of cryptic "table not found" errors during sidebar load.
-- MongoDB: dropped the `nameOnly: true` flag on `listDatabases` for servers older than 3.4, which previously rejected the flag.
-- ClickHouse: index sidebar no longer fails on ClickHouse older than 19.17 by skipping the `system.data_skipping_indices` lookup when the table doesn't exist.
-- MSSQL: view templates fall back to `IF EXISTS DROP / CREATE VIEW` on SQL Server 2014 and earlier, which lack `CREATE OR ALTER VIEW`.
-- MySQL: added a plain `EXPLAIN` variant alongside `EXPLAIN FORMAT=JSON` so MySQL 5.5 users can run query plans.
-- PostgreSQL: connecting to servers older than 9.3 no longer fails with "relation pg_matviews does not exist"; the driver feature-gates `pg_matviews`, `pg_foreign_table`, `pg_sequences`, `array_position`, `attidentity`, `attgenerated`, and ICU locale columns behind the detected server version (#1240).
+- AI Chat: scrolling stays smooth on long conversations and stream completion no longer briefly hides the chat. (#1239)
+- AI Chat: starting a new conversation no longer carries context from the previous one.
+- PostgreSQL: connecting to servers older than 9.3 no longer fails on schema load. (#1240)
+- MySQL: EXPLAIN now offers a plain variant that works on every version.
+- MSSQL: editing a view on SQL Server 2014 or earlier no longer fails with a syntax error.
+- Cassandra: connecting to a 2.x server now shows a clear unsupported-version message instead of failing on sidebar load.
+- MongoDB: connecting to servers older than 3.4 no longer fails on the database listing.
+- ClickHouse: the index sidebar no longer fails on versions older than 19.17.
 
 ## [0.40.2] - 2026-05-12
 
